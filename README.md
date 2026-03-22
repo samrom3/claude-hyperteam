@@ -12,7 +12,7 @@ review, guide, and approve at every milestone.
   ```bash
   export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
   ```
-- **`gh` CLI** installed and authenticated (for PR creation)
+- **`gh` CLI** installed and authenticated (for PR creation).
 - A **`CLAUDE.md`** at your project root that documents:
   - Your project's verification command (lint + format + tests), e.g. `uv run pre-commit run`,
     `npm run lint && npm test`, `cargo clippy && cargo test`

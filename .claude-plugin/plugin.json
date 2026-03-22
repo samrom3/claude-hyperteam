@@ -2,5 +2,9 @@
   "name": "hyperteam",
   "version": "1.0.0",
   "description": "AI-augmented development for engineers who stay in the loop. Interviews you to build a PRD (with requirement analysis and conflict resolution), then runs an autonomous specialist agent team with back-pressure gates to implement it — while you review, guide, and approve at every milestone.",
-  "author": { "name": "samrom3" }
+  "author": {
+    "name": "Sam Romano",
+    "url": "https://github.com/author"
+  },
+  "license": "MIT"
 }
