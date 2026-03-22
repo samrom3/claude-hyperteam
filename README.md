@@ -8,17 +8,18 @@ review, guide, and approve at every milestone.
 
 ## Prerequisites
 
-- **Claude Code** with Agent Teams enabled:
-  ```bash
-  export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
-  ```
+- **Claude Code** — see the [official installation guide](https://docs.anthropic.com/en/docs/claude-code/setup).
+- **Agent Teams** must be enabled. This is an experimental feature — see [Claude Code: Enable Agent Teams](https://code.claude.com/docs/en/agent-teams#enable-agent-teams) for details.
 - **`gh` CLI** installed and authenticated (for PR creation).
 - A **`CLAUDE.md`** at your project root that documents:
   - Your project's verification command (lint + format + tests), e.g. `uv run pre-commit run`,
-    `npm run lint && npm test`, `cargo clippy && cargo test`
+    `npm run lint && npm test`, `cargo clippy && cargo test`.
   - Source directory layout and conventions
+  - If you don't have one, then use `claude --init` to create one.
 
 ## Installation
+
+Hyperteam is installed as a Claude Code plugin. See the [plugins documentation](https://docs.anthropic.com/en/docs/claude-code/plugins) for full details on how plugins are discovered and loaded.
 
 Add to your project's `.claude/settings.json`:
 
@@ -33,6 +34,33 @@ Add to your project's `.claude/settings.json`:
 Or enable globally in `~/.claude/settings.json` to use across all projects.
 
 ## Usage
+
+Hyperteam is a two-step process. First you build a PRD through a structured interview, then the agent team executes it autonomously against a back-pressure gate:
+
+```
+                    ┌─────────────────────────────────────────────────────────┐
+  Step 1 (/prd)     │                                                         │
+                    │   You ──► Interview ──► Conflict ──► plans/<branch>     │
+                    │            (3 phases)    analysis      -prd.md          │
+                    └──────────────────────────────┬──────────────────────────┘
+                                                   │ PRD
+                    ┌──────────────────────────────▼──────────────────────────┐
+  Step 2            │              Lead parses PRD → task DAG                 │
+  (/hyperteam)      │                                                         │
+                    │   ┌─────────┐   ┌─────────┐   ┌─────────────┐          │
+                    │   │Worker A │   │Worker B │   │ Tech Writer │  . . .   │
+                    │   └────┬────┘   └────┬────┘   └──────┬──────┘          │
+                    │        └────────────┬┘               │                  │
+                    │                     ▼                 │                  │
+                    │               ┌──────────┐           │                  │
+                    │               │ Reviewer │◄──────────┘                  │
+                    │               │  [GATE]  │                              │
+                    │               └────┬─────┘                              │
+                    │                    │ pass                                │
+                    │                    ▼                                     │
+                    │                   PR                                     │
+                    └─────────────────────────────────────────────────────────┘
+```
 
 ### 1. Generate a PRD
 
@@ -82,6 +110,8 @@ where it stopped.
 
 ### Agents
 
+These are the generalized agents included in the plugin.
+
 | Agent | Role |
 |-------|------|
 | `hyperteam-lead` | Orchestrator — monitors the run, handles failures, detects gate readiness |
@@ -89,7 +119,9 @@ where it stopped.
 | `hyperteam-techwriter` | Claims DOC tasks, keeps documentation in sync with implementation |
 | `hyperteam-worker` | Fallback implementer for any task without a matching specialist |
 
-### Python pack agents
+#### Python pack agents
+
+We also have some additional Python specific agents included. The `hyperteam-lead` knows when to activate these automatically.
 
 | Agent | Role |
 |-------|------|
