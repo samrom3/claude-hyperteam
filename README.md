@@ -151,8 +151,7 @@ and take precedence when names overlap.
 
 ## Inspiration & prior art
 
-**Inspired by [hyperworker](https://github.com/joseph-ravenwolfe/hyperworker)** by Joseph
-Ravenwolfe — the original Ralph Wiggum loop-based autonomous agent worker for Claude Code.
+**Inspired by [hyperworker](https://github.com/joseph-ravenwolfe/hyperworker)** by Joseph Ravenwolfe.
 
 **Key architectural differences in hyperteam:**
 
