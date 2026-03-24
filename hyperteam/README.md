@@ -100,10 +100,10 @@ where it stopped.
 
 ### Skills
 
-| Skill        | Purpose                                                                    |
-| ------------ | -------------------------------------------------------------------------- |
-| `/prd`       | Multi-phase PRD generator with conflict detection and requirement analysis |
-| `/hyperteam` | Converts a PRD into an autonomous agent team with back-pressure gates      |
+| Skill                  | Purpose                                                                    |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `/hyperteam:prd`       | Multi-phase PRD generator with conflict detection and requirement analysis |
+| `/hyperteam:hyperteam` | Converts a PRD into an autonomous agent team with back-pressure gates      |
 
 ### Agents
 
