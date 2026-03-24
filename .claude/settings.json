@@ -4,5 +4,9 @@
       "Bash(claude plugin validate:*)",
       "Bash(pre-commit run:*)"
     ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
   }
 }
