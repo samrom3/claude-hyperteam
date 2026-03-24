@@ -4,53 +4,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Hyperteam is a Claude Code plugin that provides two skills (`/prd` and `/hyperteam`) for AI-augmented development. It interviews the user to build a PRD, then runs an autonomous specialist agent team with back-pressure gates to implement it.
+This repository is a **Claude Code plugin marketplace** — a curated collection of Claude Code plugins, each in its own subdirectory. Each plugin is self-contained with its own `.claude-plugin/plugin.json`, agents, skills, and documentation.
 
-This is **not** a traditional software project with build/test/lint commands. It is a collection of Markdown-based agent definitions and skill specifications that form a Claude Code plugin.
+This is **not** a traditional software project with build/test/lint commands. It is a collection of Markdown-based agent definitions and skill specifications that form Claude Code plugins.
+
+## Repository Structure
+
+```
+claude-hyper-plugs/
+├── CLAUDE.md                  # This file (repo-level guidance)
+├── README.md                  # Marketplace index and installation guide
+├── .pre-commit-config.yaml    # Shared formatting/linting hooks
+└── <plugin-name>/             # One directory per plugin
+    ├── .claude-plugin/
+    │   └── plugin.json        # Plugin metadata (name, version, description, author)
+    ├── agents/                # Agent role definitions (Markdown with YAML front-matter)
+    ├── skills/                # Skill definitions (SKILL.md + references/)
+    └── README.md              # Plugin-specific documentation
+```
+
+## Current Plugins
+
+| Plugin      | Directory    | Description                                                         |
+| ----------- | ------------ | ------------------------------------------------------------------- |
+| `hyperteam` | `hyperteam/` | Autonomous specialist agent team with PRD-driven planning and gates |
 
 ## Verification
 
-Pre-commit hooks handle formatting and linting:
+Pre-commit hooks handle formatting, linting, and plugin validation:
 
 ```bash
-pre-commit run --all-files    # trailing whitespace, EOF fixer, YAML check, merge conflict check, mdformat
+pre-commit run --all-files    # trailing whitespace, EOF fixer, YAML check, merge conflict check, mdformat, plugin validate
 ```
 
-mdformat (with GFM, footnote, config, ruff, and toc plugins) runs on all Markdown files **except** those under `skills/` and `agents/` (excluded because agent/skill prompts use intentional formatting).
+- mdformat (with GFM, footnote, config, ruff, and toc plugins) runs on all Markdown files **except** those under `skills/` and `agents/` (excluded because agent/skill prompts use intentional formatting).
+- `claude plugin validate .` validates the marketplace manifest and all plugin manifests/frontmatter.
 
-## Architecture
+You can also run validation manually:
 
-### Plugin entry point
+```bash
+claude plugin validate .
+```
 
-`.claude-plugin/plugin.json` — declares the plugin metadata. Claude Code discovers skills from `skills/` and agents from `agents/`.
+## Adding a New Plugin
 
-### Two-step workflow
+1. Create a new directory at the repo root: `<plugin-name>/`
+1. Add `.claude-plugin/plugin.json` with the plugin metadata
+1. Add `agents/` and/or `skills/` directories with Markdown definitions
+1. Add a `README.md` documenting the plugin's purpose, installation, and usage
+1. Update the "Current Plugins" table above and the root `README.md`
 
-1. **`/prd`** (`skills/prd/SKILL.md`) — Multi-phase PRD generator. Interviews the user (3 phases of refinement with conflict detection), outputs `plans/<branch>-prd.md`. Creates a `feat-<slug>` branch and sets `CLAUDE_CODE_TASK_LIST_ID` in `.claude/settings.local.json`.
-1. **`/hyperteam`** (`skills/hyperteam/SKILL.md`) — Parses the PRD into a task DAG, creates a specialist agent team via `TeamCreate`, seeds native tasks, and monitors until the back-pressure gate passes. Supports mid-run resume via `plans/<branch>-team-state.json`.
+## Plugin Anatomy
 
-### Agent roles
+Each plugin follows the Claude Code plugin spec:
 
-- **`hyperteam-lead`** — Orchestrator. Monitors the run, handles review failures, detects gate readiness. Does not implement code. Runs on Sonnet.
-- **`hyperteam-reviewer`** — Reviews completed FEAT tasks against acceptance criteria, runs the 5-check gate. Read-only for source code. Runs on Sonnet.
-- **`hyperteam-worker`** — Fallback implementer. Claims tasks via self-claim loop, follows TDD, runs verification before committing. Runs on Sonnet.
-- **`hyperteam-techwriter`** — Claims DOC tasks, updates documentation. DOC tasks skip review (terminal state is `completed`). Runs on Sonnet.
-- **Python pack** (`agents/packs/python/`) — `hyperteam-py-api-scaffolder` (creates stubs/ABCs) and `hyperteam-py-builder` (implements via TDD on scaffolds). The lead auto-activates these for Python tasks.
-
-### State files (created at runtime under `plans/`)
-
-- `plans/<branch>-team-state.json` — Authoritative task registry (status, blockers, review results, gate iterations). Enables resume.
-- `plans/<branch>-progress.txt` — Append-only audit log with timestamps.
-- `plans/<branch>-prd.md` — The generated PRD document.
-
-### Key conventions
-
-- Agents self-claim tasks from the native task list; the lead does not dispatch workers manually.
-- Tasks use YAML front-matter in their description (`id`, `type`, `role_hint`, `blocked_by`).
-- Commit messages follow `[Story-ID] - [Story Title]` format.
-- All implementing agents must read `CLAUDE.md` of the target project and follow its conventions.
-- The scaffold-first pattern is used: first story creates typed stubs with `NotImplementedError` bodies, subsequent stories implement via TDD.
-
-### Language packs
-
-Custom language packs go in the target project's `.claude/agents/` directory using the naming convention `hyperteam-<lang>-<role>.md`. The phase-1 role-hint system auto-routes tasks to matching specialists.
+- **`.claude-plugin/plugin.json`** — Entry point. Declares name, version, description, author, license.
+- **`agents/<name>.md`** — Agent definitions with YAML front-matter (`name`, `description`, `model`, `permissionMode`).
+- **`skills/<name>/SKILL.md`** — Skill definitions with YAML front-matter (`name`, `description`, `user-invocable`). Supporting files go in `references/`.
+- **`agents/packs/<lang>/`** — Optional language-specific agent packs.

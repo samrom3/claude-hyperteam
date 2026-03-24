@@ -1,0 +1,22 @@
+{
+  "name": "hyper-plugs",
+  "owner": {
+    "name": "Sam Romano"
+  },
+  "metadata": {
+    "description": "A curated marketplace of custom Claude Code plugins built by samrom3."
+  },
+  "plugins": [
+    {
+      "name": "hyperteam",
+      "source": "./hyperteam",
+      "description": "AI-augmented development for engineers who stay in the loop. Interviews you to build a PRD, then runs an autonomous specialist agent team with back-pressure gates to implement it.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Sam Romano"
+      },
+      "license": "MIT",
+      "keywords": ["prd", "agent-team", "autonomous", "back-pressure", "tdd"]
+    }
+  ]
+}

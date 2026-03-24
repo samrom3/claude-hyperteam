@@ -19,19 +19,14 @@ review, guide, and approve at every milestone.
 
 ## Installation
 
-Hyperteam is installed as a Claude Code plugin. See the [plugins documentation](https://docs.anthropic.com/en/docs/claude-code/plugins) for full details on how plugins are discovered and loaded.
+Hyperteam is installed via the [hyper-plugs marketplace](../README.md):
 
-Add to your project's `.claude/settings.json`:
-
-```json
-{
-  "enabledPlugins": {
-    "hyperteam@samrom3/claude-hyperteam": true
-  }
-}
+```
+/plugin marketplace add samrom3/claude-hyper-plugs
+/plugin install hyperteam@hyper-plugs
 ```
 
-Or enable globally in `~/.claude/settings.json` to use across all projects.
+See the [plugin marketplaces documentation](https://code.claude.com/docs/en/plugin-marketplaces) for details.
 
 ## Usage
 
