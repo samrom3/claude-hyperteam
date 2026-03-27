@@ -1,140 +1,147 @@
 # ADR-Check Contract
 
-This document defines the generic contract for any skill that performs ADR validation. Any skill
-implementing this contract (e.g., the `adr-check` skill) can be invoked by the hyperloop gate or
-any other workflow to validate ADR health without hardcoding paths.
+This document defines the generic contract that the `adr-check` skill implements and that gate
+agents (such as the hyperloop gate) consume. The contract is convention-based — no runtime
+dependency between plugins. Any skill that satisfies this interface can serve as the ADR
+validator for a gate.
 
 ---
 
-## Input
+## 1. Discovery — Inputs
 
-### ADR Directory Discovery
+The skill MUST discover ADR directories using the following priority order:
 
-The implementing skill discovers ADR directories in the following priority order:
+1. **CLAUDE.md convention (primary):** Search the project's `CLAUDE.md` for any heading
+   containing the text `ADR Locations` (case-insensitive, any heading level). Under that heading,
+   read each bullet list item as a relative path to an ADR directory. Inline `# comment`
+   annotations after the path are ignored when parsing. Example:
 
-1. **CLAUDE.md convention (primary):** Read the project's `CLAUDE.md` and locate any heading
-   containing the text "ADR Locations" (at any nesting level, e.g., `## ADR Locations`,
-   `### ADR Locations`). Parse the bulleted list beneath it — each bullet is a relative path to an
-   ADR directory. Inline `# comment` annotations are ignored when parsing.
-
-   Example CLAUDE.md section:
-   ```
+   ```markdown
    ### ADR Locations
-   - docs/adrs/            # project-wide decisions
-   - hyperloop/docs/adrs/  # hyperloop plugin
+   - docs/adrs/           # project-wide decisions
+   - hyperloop/docs/adrs/ # hyperloop plugin decisions
    ```
 
-2. **Common-pattern fallback:** If no "ADR Locations" heading exists in CLAUDE.md, scan the
-   repository for directories matching these patterns:
-   - `docs/adrs/`
-   - `decisions/`
-   - `architecture/decisions/`
+2. **Fallback (when no ADR Locations heading exists):** Scan the repository root for directories
+   matching these common patterns: `docs/adrs/`, `decisions/`, `architecture/decisions/`.
 
-### Invocation Arguments
-
-The skill accepts an optional argument to restrict validation to a single directory:
-
-```
-/adr-check [path/to/adrs/]
-```
-
-If no argument is provided, all discovered ADR directories are validated.
+If no ADR directories are found via either method, the skill MUST report this as a **warning**
+(not a failure) and exit with a passing result. A project with no ADR directories has nothing to
+validate.
 
 ---
 
-## Output
+## 2. Validation — What Is Checked
 
-### Validation Report Format
+For each discovered ADR directory, the skill runs these checks:
 
-The skill outputs a structured report in the following format for each directory:
+### 2.1 ADR File Structure
 
-```
-## ADR Check Report
+Each file matching `NNN-*.md` (where NNN is a zero-padded 3-digit number) in the directory is
+an ADR file. For each ADR file, verify:
 
-### <directory-path>
+- The file contains a `## Status` section (or equivalent heading) with a non-empty value.
+- The file contains a `## Context` section with non-trivial content (more than one blank line
+  or placeholder text like "TODO").
+- The file contains a `## Decision` section with non-trivial content.
+- The file contains a `## Consequences` section (may be brief; existence is sufficient).
 
-Status: PASS | FAIL
+### 2.2 Index Sync
 
-#### Failures (if any)
-- <specific issue with file reference and remediation step>
+The ADR directory MUST contain a `README.md` file serving as the index. Verify:
 
-#### Warnings (advisory, not gate-blocking)
-- <advisory hint about potentially undocumented architectural decisions>
-```
+- Every ADR file in the directory has a corresponding entry in the `README.md` index.
+- Every entry in the `README.md` index has a corresponding ADR file in the directory.
+  (No orphaned index entries pointing to missing files.)
 
-### Per-Directory Checks
+### 2.3 Cross-Reference Integrity
 
-For each discovered ADR directory, the skill validates:
+For ADRs with a `Superseded by ADR-NNN` status:
 
-1. **Template structure:** Every `.md` file (excluding `README.md`) must contain these sections:
-   a heading matching the ADR title, a `**Status:**` field, a `**Date:**` field, and `## Context`,
-   `## Decision`, and `## Consequences` sections.
+- The referenced ADR (NNN) must exist in the directory.
+- The referenced ADR must contain a `Supersedes: ADR-MMM` reference back to the superseded ADR.
 
-2. **Non-empty status:** No ADR may have a blank or missing `**Status:**` value.
+For ADRs with a `Supersedes: ADR-NNN` field:
 
-3. **Minimal content quality:** The `## Context` and `## Decision` sections must be non-empty
-   (contain at least one non-whitespace line beyond the heading).
-
-4. **Index sync:** The directory's `README.md` index table must list every ADR file present and
-   must not list files that do not exist (orphaned entries).
-
-5. **Cross-reference integrity:** ADRs with "Superseded by ADR-NNN" status must have a
-   corresponding new ADR that contains "Supersedes: ADR-NNN". The reverse must also hold.
-
-### Diff-Based Warnings
-
-The skill scans `git diff HEAD` (staged + unstaged) for patterns that commonly indicate
-undocumented architectural decisions. These are surfaced as **warnings** — advisory hints only,
-not gate failures:
-
-- New abstract classes or interfaces (`abstract class`, `ABC`, `interface `, `Protocol`)
-- New configuration or settings files (filenames matching `*config*`, `*settings*`, `*Config*`,
-  `*Settings*`)
-- Additions to dependency manifests (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`)
-- New top-level directories (suggesting new service or module boundaries)
+- The referenced ADR (NNN) must exist.
+- The referenced ADR's status must be `Superseded by ADR-<this>`.
 
 ---
 
-## Failure Semantics
+## 3. Output — Validation Report
 
-### PASS
+The skill MUST output a structured report in the following format:
 
-A directory receives a `PASS` result when:
+```
+ADR Check Report
+================
 
-- All ADR files have a valid, non-empty `**Status:**` field.
-- All ADR files contain non-empty `## Context` and `## Decision` sections.
-- The `README.md` index is in sync with the actual files (no missing entries, no orphaned entries).
-- All "Superseded by" / "Supersedes" cross-references resolve correctly.
+Directory: <path>
+  Status: PASS | FAIL
+  Issues:
+    - [ADR-NNN] <description of issue>
+    - ...
 
-### FAIL
+Directory: <path>
+  Status: PASS
+  Issues: none
 
-A directory receives a `FAIL` result when any of the above checks does not pass. The report lists
-each failure with the specific file and a remediation step.
+Overall: PASS | FAIL
+```
 
-### Overall result
-
-The overall skill result is:
-
-- **PASS** — all discovered directories pass all checks (warnings are allowed).
-- **FAIL** — one or more directories fail one or more checks.
-
-### Gate consumer contract
-
-Gate agents invoking this skill (or any skill implementing this contract) must:
-
-1. Invoke the skill with no arguments to check all directories, or with a specific path.
-2. Parse the `Status: PASS | FAIL` line per directory to determine pass/fail.
-3. Treat `#### Warnings` items as advisory — log them in the progress file but do not fail the gate.
-4. On `FAIL`, surface the specific failure details to the user as gate failure reasons.
+On failure, each issue entry MUST include:
+- Which ADR file is affected (by number and filename)
+- What check failed
+- A specific remediation step (e.g., "Add a non-empty ## Context section to docs/adrs/003-foo.md")
 
 ---
 
-## Graceful Degradation
+## 4. Diff-Based Warnings
 
-If no skill implementing this contract is installed, gate agents must fall back to:
+After structural validation, the skill MUST scan `git diff HEAD` (staged + unstaged) for
+patterns that suggest undocumented architectural decisions. These are surfaced as **warnings**
+— they do NOT affect the pass/fail result and do NOT block any gate.
 
-1. Scanning for ADR directories via the `### ADR Locations` convention in CLAUDE.md.
-2. If no convention section exists, scanning for `docs/adrs/` directories.
-3. Performing a basic status-field spot-check manually (no full validation).
+Patterns to detect:
 
-This ensures hyperloop gates work in projects that do not have adr-wizard installed.
+| Pattern | Warning message |
+|---------|----------------|
+| New abstract class or interface definition (Python ABC, Java `interface`, Go `interface{}` with multiple methods, TypeScript `interface`/`abstract class`) | "New interface/ABC detected in \<file\> — consider documenting the design decision" |
+| New file matching `*Config*`, `*Settings*`, `*Configuration*` | "New configuration file detected — consider documenting configuration decisions" |
+| Addition of a new dependency in `package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod` | "New dependency added — consider documenting the technology choice" |
+| New top-level directory or new subdirectory named `service`, `module`, `component`, `pkg`, `lib` | "New service/module boundary detected — consider documenting the architectural boundary" |
+
+Warnings are appended to the report after the main validation output:
+
+```
+Diff-Based Warnings (advisory only — not gate-blocking)
+========================================================
+  - [WARNING] <pattern description>: <file or location>
+```
+
+If no diff-based warnings are found, this section is omitted from the report.
+
+---
+
+## 5. Pass / Fail Semantics
+
+| Condition | Result |
+|-----------|--------|
+| All structural checks pass for all directories | **PASS** |
+| Any structural check fails in any directory | **FAIL** |
+| No ADR directories found | **PASS** (warning emitted) |
+| Diff-based warnings present | **PASS** (warnings are informational) |
+
+Gate consumers MUST treat a **FAIL** result as a gate-blocking failure. Gate consumers MUST
+treat diff-based warnings as informational only — they must be logged in the progress file and
+presented to the user, but they do not block the gate.
+
+---
+
+## 6. Invocation
+
+- **User-invocable:** `/adr-check`
+- **Model-invocable:** The skill description includes phrases matching ADR validation context
+  so the model can auto-trigger it when relevant.
+- **Gate invocation:** The gate template calls the skill by name. If the skill is not installed,
+  the gate falls back to basic directory scanning (see FR-011 in the PRD).

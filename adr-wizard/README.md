@@ -1,98 +1,59 @@
 # adr-wizard
 
-ADR lifecycle management for Claude Code. Create, supersede, deprecate, and validate
-Architecture Decision Records across multiple directories.
+> ADR lifecycle management for Claude Code.
 
-## Overview
+<!-- mdformat-toc start --slug=github --maxlevel=3 --minlevel=2 -->
 
-`adr-wizard` provides four focused skills for managing ADRs throughout their lifecycle:
+- [Overview](#overview)
+- [Installation](#installation)
+- [Skills](#skills)
+- [ADR Location Convention](#adr-location-convention)
+- [Compatibility](#compatibility)
 
-- **`/adr-create`** — Create a new numbered ADR using the Nygard template and update the index.
-- **`/adr-supersede`** — Replace an existing ADR with a new one, preserving bidirectional references.
-- **`/adr-deprecate`** — Mark an ADR as deprecated with a recorded reason.
-- **`/adr-check`** — Validate ADR structural integrity, index sync, cross-references, and surface diff-based warnings.
+<!-- mdformat-toc end -->
 
-All skills are both **user-invocable** (via `/adr-*` slash commands) and **model-invocable** (the
-model auto-triggers them when it detects architectural decision context).
+## Overview<a name="overview"></a>
 
-## Installation
+`adr-wizard` is a Claude Code plugin that provides focused skills for every stage of an
+Architecture Decision Record (ADR) lifecycle: **create**, **supersede**, **deprecate**, and
+**validate**. It supports multiple ADR directories in a single repository via a CLAUDE.md
+convention, and integrates gracefully with the `hyperloop` gate when both plugins are installed.
+
+## Installation<a name="installation"></a>
 
 ```bash
-claude plugin install adr-wizard
+claude plugin install adr-wizard@hyper-plugs
 ```
 
-## Skills
+## Skills<a name="skills"></a>
 
-### `/adr-create`
+| Skill           | Command          | Description                                                    |
+| --------------- | ---------------- | -------------------------------------------------------------- |
+| `adr-create`    | `/adr-create`    | Create a new ADR with auto-numbering and index updates         |
+| `adr-supersede` | `/adr-supersede` | Supersede an existing ADR, with bidirectional cross-references |
+| `adr-deprecate` | `/adr-deprecate` | Deprecate an ADR with a recorded reason                        |
+| `adr-check`     | `/adr-check`     | Validate all ADRs for structural integrity and index sync      |
 
-Creates a new ADR in the appropriate directory. The skill:
+## ADR Location Convention<a name="adr-location-convention"></a>
 
-1. Discovers ADR directories from `CLAUDE.md` or common patterns (see [ADR Location Convention](#adr-location-convention)).
-1. If multiple directories exist, auto-suggests the most likely one based on recent file context and asks for confirmation.
-1. Auto-numbers the ADR (highest existing + 1, zero-padded to 3 digits).
-1. Fills the Nygard-style template (`references/adr-template.md`).
-1. Updates the `README.md` index in the target directory.
-
-### `/adr-supersede`
-
-Supersedes an existing ADR with a new one. The skill:
-
-1. Asks which existing ADR is being superseded.
-1. Creates a new ADR with a "Supersedes: ADR-NNN" field.
-1. Updates the superseded ADR's status to "Superseded by ADR-NNN".
-1. Updates the index for both changes.
-
-### `/adr-deprecate`
-
-Marks an existing ADR as deprecated. The skill:
-
-1. Asks which ADR to deprecate and the reason.
-1. Updates the ADR's status to "Deprecated" and adds a "Deprecated: \<reason>" field.
-1. Updates the directory index.
-
-### `/adr-check`
-
-Validates all ADR directories. The skill:
-
-- Checks template structure, non-empty status, minimal content quality (Context/Decision non-empty).
-- Verifies the `README.md` index is in sync with actual files.
-- Validates "Supersedes"/"Superseded by" cross-references are bidirectional.
-- Scans `git diff` for patterns suggesting undocumented architectural decisions (new interfaces,
-  config files, dependency additions, new service boundaries) — surfaced as **warnings**, not failures.
-- Outputs a per-directory pass/fail report with remediation steps on failure.
-
-See [`skills/adr-check/references/adr-check-contract.md`](skills/adr-check/references/adr-check-contract.md)
-for the full contract specification.
-
-## ADR Location Convention
-
-All skills discover ADR directories using the following priority order:
-
-**1. `### ADR Locations` section in `CLAUDE.md` (recommended)**
-
-Add a section to your project's `CLAUDE.md` listing each ADR directory as a bullet:
+`adr-wizard` skills discover ADR directories by reading a `### ADR Locations` subsection from
+the project's `CLAUDE.md`. Add this subsection wherever it makes sense in your `CLAUDE.md`:
 
 ```markdown
 ### ADR Locations
-
-- docs/adrs/            # project-wide decisions
-- hyperloop/docs/adrs/  # hyperloop plugin
+- docs/adrs/           # project-wide decisions
+- hyperloop/docs/adrs/ # hyperloop plugin decisions
 ```
 
-The skill searches for any heading containing "ADR Locations" at any nesting level. Inline
-`# comment` annotations are ignored when parsing paths.
+Each bullet is a relative path to an ADR directory. Inline `# comments` are ignored by the
+skills.
 
-**2. Common-pattern fallback**
+If no `### ADR Locations` section is present, skills fall back to scanning for `docs/adrs/`,
+`decisions/`, and `architecture/decisions/` at the repository root.
 
-If no `### ADR Locations` section exists, skills scan for:
+## Compatibility<a name="compatibility"></a>
 
-- `docs/adrs/`
-- `decisions/`
-- `architecture/decisions/`
-
-## Compatibility
-
-- **Standalone:** Works in any project with or without hyperloop.
-- **With hyperloop:** The hyperloop gate's Check 2 (ADR sync) will automatically invoke `/adr-check`
-  if adr-wizard is installed, using the full validation contract. Without adr-wizard, the gate
-  falls back to basic directory scanning.
+`adr-wizard` works standalone — no other plugins required. When used alongside `hyperloop`,
+the gate template automatically delegates ADR validation to `/adr-check` if the skill is
+available, providing multi-directory ADR support in the gate. If `adr-wizard` is not installed,
+`hyperloop` falls back to its built-in basic ADR scanning.
