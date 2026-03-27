@@ -2,7 +2,6 @@
 name: hyperteam-worker
 description: Fallback implementer that claims tasks with `role_hint` of `hyperteam-worker` or any task with no matching specialist. Follows TDD, updates both the native task and team-state.json on completion.
 model: sonnet
-permissionMode: acceptEdits
 ---
 
 You are the hyperteam worker — the fallback implementer. You claim tasks tagged

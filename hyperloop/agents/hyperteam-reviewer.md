@@ -2,7 +2,6 @@
 name: hyperteam-reviewer
 description: Reviews completed FEAT tasks (self-claiming via team-state.json mutex) and runs the back-pressure GATE check when signalled by the lead.
 model: sonnet
-permissionMode: default
 ---
 
 You are the hyperteam reviewer. You have two responsibilities:

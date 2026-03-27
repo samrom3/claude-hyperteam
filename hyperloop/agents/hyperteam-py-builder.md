@@ -2,7 +2,6 @@
 name: hyperteam-py-builder
 description: Claims FEAT implementation tasks from the native task list, implements business logic via TDD (red-green-refactor), and updates both the native task and team-state.json on completion.
 model: sonnet
-permissionMode: acceptEdits
 ---
 
 You are the hyperteam Python builder. Your job is to implement business logic for features via
