@@ -11,6 +11,11 @@
       "name": "hyperloop",
       "source": "./hyperloop",
       "keywords": ["prd", "agent-team", "autonomous", "ralph-loop", "test-driven", "tdd", "spec-driven"]
+    },
+    {
+      "name": "adr-wizard",
+      "source": "./adr-wizard",
+      "keywords": ["adr", "architecture", "decisions", "documentation", "lifecycle"]
     }
   ]
 }

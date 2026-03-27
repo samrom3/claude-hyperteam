@@ -1,0 +1,169 @@
+---
+name: adr-create
+description: "Create a new Architecture Decision Record (ADR) in the correct directory with auto-numbering and index updates. Triggers when the user or model discusses an architectural decision, design choice, technical decision, or needs to document a new architectural pattern, technology selection, or system design choice. Invocable via /adr-create <decision summary>."
+argument-hint: "Brief description of the architectural decision (e.g., 'Use PostgreSQL for primary storage')"
+user-invocable: true
+---
+
+# adr-create
+
+Creates a new ADR file with auto-numbering, fills it from the Nygard template, and updates the
+directory's README.md index.
+
+---
+
+## Step 1 — Discover ADR directories
+
+1. Read the project's `CLAUDE.md`.
+2. Search for any heading containing the text `ADR Locations` (case-insensitive, any heading
+   level, e.g., `## ADR Locations`, `### ADR Locations`).
+3. If found, read every bullet list item under that heading as a relative path. Ignore any inline
+   `# comment` annotation after the path (strip from `#` to end of line). Collect all paths into
+   `adr_dirs`.
+4. If **no** such heading exists in CLAUDE.md, fall back: scan the repository root for
+   directories named `docs/adrs`, `decisions`, or `architecture/decisions`. Use whichever exist
+   as `adr_dirs`.
+5. If `adr_dirs` is empty, offer to bootstrap one for the user using `AskUserQuestion`:
+   > No ADR directories found. Would you like me to create one?
+
+   Options:
+   - `docs/adrs/` (recommended — standard location)
+   - Other (let the user type a custom path)
+
+   If the user confirms:
+   a. Create the chosen directory.
+   b. Copy the README template from [`references/README-template.md`](references/README-template.md)
+      into `<chosen_dir>/README.md`, replacing the `<PROJECT_NAME>` placeholder with the actual
+      project name (inferred from the repo root directory name or `package.json`/`pyproject.toml`
+      if available).
+   c. Copy [`references/0000-adr-template.md`](references/0000-adr-template.md) into the new
+      directory as the template reference file.
+   d. Add a `### ADR Locations` section to the project's `CLAUDE.md` (or create one if absent)
+      with the new directory path.
+   e. Set `adr_dirs` to the newly created directory and continue to Step 2.
+
+## Step 2 — Select target directory
+
+1. If `adr_dirs` has exactly one entry, use it as `target_dir`.
+2. If `adr_dirs` has multiple entries:
+   a. Identify the directory whose path best matches the user's recent file context. "Recent
+      file context" means: any files mentioned in the current conversation, files opened in the
+      editor, or the directory containing the file most recently mentioned. Choose the ADR
+      directory whose path shares the longest common prefix with that context.
+   b. Present this as the suggested default:
+      > Suggested ADR directory: `<target_dir>` (based on recent file context)
+      > Other options: `<list remaining dirs>`
+      > Press Enter to accept, or type the path of another directory.
+   c. Wait for user confirmation or override.
+   d. Use the confirmed path as `target_dir`.
+
+## Step 3 — Determine next ADR number
+
+1. List all files in `target_dir` matching the pattern `NNNN-*.md` (where NNNN is one or more digits).
+2. Find the highest number among all matching filenames.
+3. `next_num = highest + 1` (or `1` if no matching files exist).
+4. Zero-pad `next_num` to 4 digits: e.g., `1` → `0001`, `12` → `0012`.
+
+## Step 4 — Parse the decision context
+
+The user may provide the decision as an argument to `/adr-create <decision summary>`, or it may
+be available from the conversation context (e.g., the user just discussed an architectural choice).
+
+1. **Argument provided** (e.g., `/adr-create Use PostgreSQL for primary storage`): use the
+   argument text as `decision_summary`.
+2. **No argument, but conversation context** contains a clear architectural decision: extract the
+   decision from context as `decision_summary`.
+3. **No argument and no clear context**: ask:
+   > What architectural decision are you recording? (e.g., "Use PostgreSQL for primary storage")
+
+From `decision_summary` and the full conversation context, derive:
+- `adr_title`: a concise title for the ADR (the summary itself, or a shortened form if verbose).
+
+Convert `adr_title` to a kebab-case slug for the filename: lowercase, spaces and special
+characters replaced with hyphens.
+
+## Step 5 — Draft all ADR sections
+
+The skill is responsible for authoring every section of the ADR — do not leave template
+placeholders for the user. Infer content from the conversation context, codebase state, and
+`decision_summary`. When you lack enough information to write a section confidently, use
+`AskUserQuestion` to interview the user before proceeding.
+
+For each section, gather information as follows:
+
+### Context
+
+Write a short paragraph explaining **why** this decision is needed. Draw from:
+- The conversation history (what problem was being discussed?)
+- Recent code changes or files under discussion
+- Any constraints, requirements, or trade-offs mentioned
+
+If the conversation does not provide enough context, ask:
+> What problem or situation prompted this decision? What constraints are in play?
+
+### Decision
+
+Write a few sentences stating **what** was decided. Be specific and declarative (e.g., "We will
+use PostgreSQL 16 as the primary data store for all user-facing services"). Draw from:
+- The `decision_summary` argument
+- Any explicit choices made in the conversation
+
+If the decision is ambiguous (e.g., the user only gave a vague title), ask:
+> Can you state the decision more precisely? What exactly are we choosing to do?
+
+### Consequences
+
+Write 3–7 bullet points covering both **positive** and **negative** consequences of this
+decision. Include:
+- Benefits the team expects to gain
+- Trade-offs or risks being accepted
+- Any follow-up work this decision creates
+- Migration or compatibility implications, if applicable
+
+If you cannot infer consequences from context, ask:
+> What are the main benefits and trade-offs of this decision? Any follow-up work it creates?
+
+### Interview flow
+
+Batch your questions — if you need clarity on multiple sections, ask them together in a single
+`AskUserQuestion` call rather than one at a time. Proceed to file creation only after all
+sections have substantive content.
+
+## Step 6 — Create the ADR file
+
+1. Construct filename: `<target_dir>/<NNNN>-<slug>.md` where NNNN is the zero-padded number and
+   slug is the kebab-case title.
+2. Fill in the template from [`references/0000-adr-template.md`](references/0000-adr-template.md):
+   - Replace `NNNN` with the zero-padded number.
+   - Replace `Title` with `adr_title`.
+   - Set `**Status:** Proposed` (new ADRs always start as Proposed unless the user specifies
+     otherwise).
+   - Set `**Date:**` to today's date in `YYYY-MM-DD` format.
+   - Write the drafted Context, Decision, and Consequences content into their respective sections.
+3. Write the file to disk.
+
+## Step 7 — Update the index
+
+1. Check if `<target_dir>/README.md` exists.
+   - If it does not exist, create it with this structure:
+     ```markdown
+     # Architecture Decision Records
+
+     | ADR | Title | Status |
+     |-----|-------|--------|
+     ```
+2. Add a new row to the table in `README.md`:
+   ```
+   | [ADR-NNNN](<NNNN>-<slug>.md) | <adr_title> | Proposed |
+   ```
+   Insert it at the end of the table (after the last existing row).
+3. Save `README.md`.
+
+## Step 8 — Confirm
+
+Inform the user:
+
+> Created `<target_dir>/<NNNN>-<slug>.md` (ADR-NNNN: <adr_title>)
+> Updated index: `<target_dir>/README.md`
+>
+> Review the ADR and change the Status to `Accepted` when the decision is finalised.

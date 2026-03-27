@@ -13,6 +13,16 @@ AI-augmented development for engineers who stay in the loop. Interviews you to b
 
 Refer to the [Hyperloop guide](/hyperloop/README.md) for more usage and details.
 
+### [adr-wizard](adr-wizard/)
+
+ADR lifecycle management for Claude Code. Create, supersede, deprecate, and validate Architecture
+Decision Records across single or multiple directories using a CLAUDE.md convention for discovery.
+Integrates with `hyperloop`'s gate for automated ADR validation.
+
+- **Skills:** `/adr-create`, `/adr-supersede`, `/adr-deprecate`, `/adr-check`
+
+Refer to the [adr-wizard guide](/adr-wizard/README.md) for more usage and details.
+
 ## Installation
 
 ### 1. Add the marketplace
