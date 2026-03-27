@@ -80,6 +80,8 @@ You can generate multiple PRDs upfront — they accumulate in `plans/` and can b
 
 ### 2. Run the team
 
+> BEST-PRACTICE: Run `/clear` first to avoid context drift and costs of auto compaction.
+
 ```
 /hyperloop:hyperteam
 ```
@@ -108,7 +110,7 @@ where it stopped.
 
 Each `/hyperloop:hyperteam` session creates its own agent team via `TeamCreate`, which
 automatically scopes the native task list by team name. This means you can run multiple sessions
-in parallel — open separate Claude Code windows, run `/hyperloop:hyperteam` in each, and select a
+in parallel — open separate Claude Code sessions, then run `/hyperloop:hyperteam` in each, and select a
 different PRD in each session. Sessions are fully isolated because each team has its own task list
 at `~/.claude/tasks/{team-name}/`.
 

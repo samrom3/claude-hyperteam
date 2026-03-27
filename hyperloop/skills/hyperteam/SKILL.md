@@ -44,7 +44,7 @@ Run these checks in order.
    - Within each group, sort by file modification time (most recent first).
    - Format each entry as: `<n>. plans/<name>-prd.md`
    - Append the following warning on the same line for every in-progress entry:
-     `⚠ This PRD has an in-flight hyperteam run. Ensure no other session is working on it before proceeding.`
+     `⚠ This PRD may have an in-flight hyperteam run. Ensure no other session is working on it before proceeding.`
 6. **Single PRD:** If exactly one incomplete PRD exists, use `AskUserQuestion` to confirm:
    > Only one incomplete PRD found:
    >

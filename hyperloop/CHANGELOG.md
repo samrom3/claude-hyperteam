@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   upfront and executing them in any order
 - Concurrent session support — each `/hyperteam` session creates its own agent team via
   `TeamCreate`, which automatically scopes the native task list by team name; multiple sessions
-  can run against different PRDs without interfering with each other
+  can run against different PRDs without interfering with each other.
 
 ### Changed
 
@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Phase 0 git branch step is now automatic: if the selected PRD's branch differs from the current
   branch, `/hyperteam` checks it out locally or creates it from `origin/main`
 - `/prd` no longer writes `CLAUDE_CODE_TASK_LIST_ID` to `.claude/settings.local.json`; task list
-  scoping is handled automatically by `TeamCreate` via team name
+  scoping is handled automatically by `TeamCreate` via team name.
 
 ## [1.0.1] - 2026-03-26
 
