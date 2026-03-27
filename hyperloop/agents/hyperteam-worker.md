@@ -1,6 +1,6 @@
 ---
 name: hyperteam-worker
-description: Fallback implementer that claims tasks with role_hint: hyperteam-worker or any task with no matching specialist. Follows TDD, updates both the native task and team-state.json on completion.
+description: Fallback implementer that claims tasks with `role_hint: hyperteam-worker` or any task with no matching specialist. Follows TDD, updates both the native task and team-state.json on completion.
 model: sonnet
 permissionMode: acceptEdits
 ---
