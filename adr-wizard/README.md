@@ -42,39 +42,51 @@ claude plugin install adr-wizard@hyper-plugs
 
 ### adr-create<a name="adr-create"></a>
 
-Creates a new Nygard-style ADR file with auto-numbering, fills in the template, and updates the
-directory index.
+Creates a new Nygard-style ADR file with auto-numbering, drafts all sections from conversation
+context, and updates the directory index. If no ADR directory exists, offers to bootstrap one.
 
 ```
-/adr-create
-# or: just discuss an architectural decision in the conversation and the
-# model will offer to create an ADR automatically
+/adr-create <decision summary>
+
+# Examples:
+/adr-create Use PostgreSQL for primary storage
+/adr-create Adopt hexagonal architecture for the payments service
+
+# Or: just discuss an architectural decision — the model will offer to
+# create an ADR automatically based on what you've described.
 ```
 
-The skill discovers your ADR directory from CLAUDE.md, finds the next available number, creates
-`NNNN-<slug>.md`, and adds it to `README.md`. It drafts all sections (Context, Decision,
-Consequences) from conversation context, interviewing you for any missing details.
+The skill discovers your ADR directory from CLAUDE.md, finds the next available number, and
+writes `NNNN-<slug>.md` with Context, Decision, and Consequences drafted from your conversation.
+It interviews you via `AskUserQuestion` only for details it cannot infer.
 
 ### adr-supersede<a name="adr-supersede"></a>
 
-Creates a new ADR that replaces an existing one. Updates the old ADR's status to
-`Superseded by ADR-NNNN` and adds a `Supersedes: ADR-MMMM` field to the new one.
+Supersedes an existing ADR with a new one. Reads the old ADR and conversation context to draft
+all sections of the replacement, then links both ADRs with bidirectional cross-references.
+Delegates new ADR creation to `adr-create`.
 
 ```
-/adr-supersede
-# optionally supply the ADR number to supersede:
-/adr-supersede 0003
+/adr-supersede <old>[->new] <new decision or reason>
+
+# Examples:
+/adr-supersede 3 Switching from PostgreSQL to CockroachDB for horizontal scaling
+/adr-supersede 3->7 CockroachDB was chosen — link existing ADR-0007 as the replacement
+/adr-supersede 3->7   # ADR-0007 already exists, just link the two
 ```
 
 ### adr-deprecate<a name="adr-deprecate"></a>
 
-Marks an existing ADR as deprecated without creating a replacement. Records the deprecation
-reason in the file.
+Marks an existing ADR as deprecated. Infers the reason from conversation context, writes a
+concise `**Deprecated:**` metadata line, and appends a full `## Deprecation Note` section so
+future readers understand what changed and why.
 
 ```
-/adr-deprecate
-# optionally supply the ADR number:
-/adr-deprecate 0005
+/adr-deprecate <ADR number> <reason>
+
+# Examples:
+/adr-deprecate 5 No longer applicable after migration to microservices
+/adr-deprecate 2   # skill will infer reason from conversation context
 ```
 
 ### adr-check<a name="adr-check"></a>

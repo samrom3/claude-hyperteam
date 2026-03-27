@@ -106,3 +106,15 @@ Every version bump **must** have a corresponding entry in the plugin's `CHANGELO
   the repo root, because each plugin is independently versioned.
 - Use `[Unreleased]` for work-in-progress changes before a version is cut.
 - Entries go under `### Added`, `### Changed`, `### Fixed`, or `### Removed` subsections.
+
+### README sync — required when skill interfaces change
+
+A plugin's `README.md` is the user-facing contract for how skills are invoked. Keep it in sync
+with the skill definitions whenever any of the following change:
+
+- Skill argument format or `argument-hint` (command signatures in the README must match)
+- New skills added or existing skills removed
+- Skill behavior changes visible to users (e.g., new interview flow, new output sections)
+
+When editing a `SKILL.md`, check the plugin's `README.md` and update the corresponding skill
+section before committing. The README examples must always reflect the actual invocation syntax.
