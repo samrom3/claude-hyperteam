@@ -61,4 +61,47 @@ Each plugin follows the Claude Code plugin spec:
 - **`.claude-plugin/plugin.json`** — Entry point. Declares name, version, description, author, license.
 - **`agents/<name>.md`** — Agent definitions with YAML front-matter (`name`, `description`, `model`, `permissionMode`).
 - **`skills/<name>/SKILL.md`** — Skill definitions with YAML front-matter (`name`, `description`, `user-invocable`). Supporting files go in `references/`.
-- **`agents/packs/<lang>/`** — Optional language-specific agent packs.
+
+## Plugin Conventions
+
+These conventions prevent a class of bugs caused by stale paths, missing version bumps, or
+undiscoverable agents. Follow them whenever modifying or adding a plugin.
+
+### Agent directory — always flat
+
+All plugin agents **must** live directly in `agents/` — no subdirectories.
+
+Claude Code's default agent discovery scans only the top-level `agents/` directory. Agents nested
+under `agents/packs/`, `agents/lang/`, or any other subdirectory are **invisible** to users.
+
+- Correct: `hyperloop/agents/hyperteam-py-builder.md`
+- Wrong: `hyperloop/agents/packs/python/hyperteam-py-builder.md`
+
+The naming convention `hyperteam-<lang>-<role>` encodes the language pack membership; a directory
+hierarchy is redundant and harmful.
+
+> **User-added agents** (placed by the user in their project's `.claude/agents/`) are not
+> subject to this rule — users can nest however they like in their own project directories.
+
+### Versioning — semantic versioning
+
+Plugins use [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
+
+| Change type                                        | Version bump | Example           |
+| -------------------------------------------------- | ------------ | ----------------- |
+| Breaking change (removes or renames agents/skills) | **major**    | `1.0.0` → `2.0.0` |
+| New feature (adds agents, skills, or capabilities) | **minor**    | `1.0.0` → `1.1.0` |
+| Bug fix, documentation, refactor (no API change)   | **patch**    | `1.0.0` → `1.0.1` |
+
+Always bump the version in `plugin.json` when publishing changes. Claude Code caches plugin
+manifests; without a version bump, existing users will not receive the update.
+
+### CHANGELOG — required for every version bump
+
+Every version bump **must** have a corresponding entry in the plugin's `CHANGELOG.md`:
+
+- The file must follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+- Place the `CHANGELOG.md` inside the plugin directory (e.g., `hyperloop/CHANGELOG.md`), not at
+  the repo root, because each plugin is independently versioned.
+- Use `[Unreleased]` for work-in-progress changes before a version is cut.
+- Entries go under `### Added`, `### Changed`, `### Fixed`, or `### Removed` subsections.
