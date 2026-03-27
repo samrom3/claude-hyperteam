@@ -25,9 +25,10 @@ claude-hyper-plugs/
 
 ## Current Plugins
 
-| Plugin      | Directory    | Description                                                         |
-| ----------- | ------------ | ------------------------------------------------------------------- |
-| `hyperloop` | `hyperloop/` | Autonomous specialist agent team with PRD-driven planning and gates |
+| Plugin       | Directory     | Description                                                                                        |
+| ------------ | ------------- | -------------------------------------------------------------------------------------------------- |
+| `hyperloop`  | `hyperloop/`  | Autonomous specialist agent team with PRD-driven planning and gates                                |
+| `adr-wizard` | `adr-wizard/` | ADR lifecycle management: create, supersede, deprecate, and validate Architecture Decision Records |
 
 ## Verification
 
