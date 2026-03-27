@@ -118,7 +118,7 @@ These are the generalized agents included in the plugin.
 
 #### Python pack agents
 
-We also have some additional Python specific agents included. The `hyperteam-lead` knows when to activate these automatically.
+The Python pack agents live flat in `agents/` alongside the core agents and are discovered automatically. The `hyperteam-lead` knows when to activate these automatically.
 
 | Agent                         | Role                                                                   |
 | ----------------------------- | ---------------------------------------------------------------------- |
@@ -134,8 +134,8 @@ We also have some additional Python specific agents included. The `hyperteam-lea
 
 ## Language packs
 
-Hyperloop ships with a **Python pack** (`agents/packs/python/`) that provides specialized
-scaffolder and builder agents for Python projects.
+Hyperloop ships with a **Python pack** that provides specialized scaffolder and builder agents
+for Python projects. These agents live flat in `agents/` for automatic discovery by Claude Code.
 
 Unlike language-specific forks, a single hyperloop installation works across mixed-stack repos.
 The role-hint system activates only the language-pack agents relevant to each task — if no
@@ -146,6 +146,10 @@ language-specific agent matches, the generic `hyperteam-worker` handles it.
 1. Create agent definitions following the naming convention `hyperteam-<lang>-<role>.md`
 1. Place them in your project's `.claude/agents/` directory
 1. The phase-1 role-hint assignment will detect installed agents and route tasks accordingly
+
+> **Note for plugin contributors:** Plugin-bundled agents must live flat in `agents/` (no subdirectories).
+> Claude Code only scans the top-level `agents/` directory for auto-discovery. Custom pack agents
+> added to a user's project go in `.claude/agents/` (unrestricted nesting) as described above.
 
 For example, a TypeScript pack might include:
 
