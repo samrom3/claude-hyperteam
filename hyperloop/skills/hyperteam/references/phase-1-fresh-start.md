@@ -107,8 +107,8 @@ For each task, assign a `role_hint` using the following rules:
 **Language-pack roles (when matching agents are installed):**
 
 Check whether language-specific agents exist in the project's `.claude/agents/` or the
-plugin's `agents/packs/` directory. If language-pack agents are present, apply their
-heuristics BEFORE falling back to `hyperteam-worker`.
+plugin's `agents/` directory (all plugin agents live flat in `agents/` for auto-discovery).
+If language-pack agents are present, apply their heuristics BEFORE falling back to `hyperteam-worker`.
 
 For example, with the Python pack installed:
 
