@@ -1,7 +1,16 @@
-# Architecture Decision Records
+# <PROJECT_NAME>: Architecture Decision Records (ADRs)
 
-This directory contains the Architecture Decision Records (ADRs) for Fitinera. ADRs are short documents that capture an
-important architectural or design decision, the context that motivated it, and its consequences.
+This directory contains the Architecture Decision Records (ADRs) for <PROJECT_NAME>.
+
+ADRs are short documents that capture an important architectural or design decision, the context that motivated it, and its consequences.
+
+Martin Fowler explains:
+
+> Software architecture is those decisions which are both important and hard to change.
+
+An Architecture Decision Record is a document that captures an important architectural decision made along with its context and consequences.
+
+It’s a way to capture the important decisions that shape a software's [quality attributes](https://en.wikipedia.org/wiki/List_of_system_quality_attributes).
 
 ## What is an ADR?
 

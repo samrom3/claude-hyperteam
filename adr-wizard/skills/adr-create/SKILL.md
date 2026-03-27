@@ -33,7 +33,7 @@ directory's README.md index.
    If the user confirms:
    a. Create the chosen directory.
    b. Copy the README template from [`references/README-template.md`](references/README-template.md)
-      into `<chosen_dir>/README.md`, replacing the project name placeholder with the actual
+      into `<chosen_dir>/README.md`, replacing the `<PROJECT_NAME>` placeholder with the actual
       project name (inferred from the repo root directory name or `package.json`/`pyproject.toml`
       if available).
    c. Copy [`references/0000-adr-template.md`](references/0000-adr-template.md) into the new
