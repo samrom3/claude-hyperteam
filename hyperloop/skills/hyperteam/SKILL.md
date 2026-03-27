@@ -65,16 +65,35 @@ Run these checks in order.
    - Example: `feat-auth-flow` → `auth-flow`
    - If `<branch>` does not start with `feat-`, use `<branch>` as `<slug>` unchanged.
 
-### Step 2 — Verify git branch
+### Step 2 — Checkout git branch
 
 1. Run `git branch --show-current`.
-2. If the result matches `<branch>` — proceed.
-3. If not — use `AskUserQuestion`:
-   > The current git branch (`<actual>`) does not match the task list branch (`<branch>`). Continue
-   > anyway, or pause to check out the correct branch?
-4. If the user says pause, **stop here**.
+2. If the result matches `<branch>` — proceed to Step 3.
+3. If not:
+   a. Run `git branch --list <branch>` to check whether the branch exists locally.
+   b. **Branch exists locally** → run `git checkout <branch>`.
+   c. **Branch does not exist locally** → run `git fetch origin main && git checkout -b <branch> origin/main`.
+   d. Verify with `git branch --show-current` — the output must equal `<branch>`. If it doesn't,
+      use `AskUserQuestion` to surface the error and stop.
 
-### Step 3 — Detect fresh start vs. resume
+### Step 3 — Verify symlink and scope task list
+
+1. Verify the symlink `plans/<branch>` → `~/.claude/tasks/<branch>` exists:
+   - Run `test -L plans/<branch>`.
+   - If absent or not a symlink, create it:
+     ```
+     mkdir -p plans && ln -sf ~/.claude/tasks/<branch> plans/<branch>
+     ```
+   - Verify: `readlink plans/<branch>` must return a path ending in `.claude/tasks/<branch>`.
+     If it doesn't, use `AskUserQuestion` to surface the error and stop.
+2. Scope the session task list:
+   ```
+   export CLAUDE_CODE_TASK_LIST_ID=<branch>
+   ```
+   This scopes all `TaskCreate` / `TaskList` / `TaskUpdate` calls in this session to the
+   `<branch>` task list. Must run before Phase 2, Step 3.
+
+### Step 4 — Detect fresh start vs. resume
 
 Check whether `plans/<branch>-team-state.json` exists.
 
