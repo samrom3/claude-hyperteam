@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-03-27
+
+### Changed
+
+- Gate Check 2 (ADR sync) now delegates to the `/adr-check` skill when adr-wizard is installed,
+  falling back to manual directory scanning when it is not. The check no longer hardcodes a
+  single `docs/adrs/` path — it reads `### ADR Locations` from `CLAUDE.md` or scans common
+  fallback directories. Backwards-compatible: hyperteam works without adr-wizard installed.
+
 ## [1.1.0] - 2026-03-26
 
 ### Added

@@ -24,8 +24,24 @@ Verify that all docs/, README.md, CONTRIBUTING.md content matches the implemente
 ## Check 2 — ADR sync
 
 Verify that all applicable design choices made during implementation have been documented as ADRs
-(per docs/adrs/ conventions) and that each ADR's Status field is set correctly
-(Accepted, Rejected, Superseded, etc.). If ADRs are out of sync, update them and re-validate.
+and that each ADR's Status field is set correctly (Accepted, Rejected, Superseded, etc.).
+
+**Primary path (adr-wizard installed):** If the `/adr-check` skill is available, invoke it.
+Use its pass/fail result directly. If it returns FAIL, fix the reported issues and re-run
+`/adr-check` until it passes.
+
+**Fallback path (adr-wizard not installed):** If no ADR check skill is available, locate ADR
+directories manually:
+1. Read the project's `CLAUDE.md` for a heading containing `ADR Locations` (any heading level,
+   case-insensitive). Treat each bullet item under that heading as a relative path to an ADR
+   directory.
+2. If no such heading exists, scan the repository root for `docs/adrs/`, `decisions/`, and
+   `architecture/decisions/` directories.
+3. For each directory found, verify all ADR files have non-empty Status fields and that the
+   `README.md` index is in sync with the actual ADR files. If out of sync, update the ADRs
+   and re-validate.
+
+If no ADR directories are found via either method, this check passes with a warning.
 
 ## Check 3 — Pre-commit checks
 
