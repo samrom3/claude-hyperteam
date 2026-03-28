@@ -17,9 +17,10 @@ ______________________________________________________________________
    > | Source Issue | owner/repo#N |
    > ```
    >
-   > Locate the H1 heading, then scan forward for a `| Source Issue |` row before any `##` line.
-   > Capture the value from the second cell as `<source_issue>` (e.g. `samrom3/claude-hyper-plugs#13`).
-   > If no such row is found before the first `##`, set `<source_issue>` to `null`.
+   > Locate the H1 heading, then scan forward collecting **all** `| Source Issue |` rows before any
+   > `##` line. Extract the second cell value from each matching row and build `<source_issues>` as
+   > a list (e.g. `["samrom3/claude-hyper-plugs#13"]`). If no such rows are found before the first
+   > `##`, set `<source_issues>` to `null`.
 2. Extract all developer stories. Stories are headings that match:
    - `### FEAT-*` — feature implementation stories
    - `### DOC-*` — documentation stories
@@ -150,7 +151,7 @@ Once the user approves the plan, write `plans/<branch>-team-state.json` (schema:
     "slug": "<slug>",
     "prd_path": "plans/<branch>-prd.md",
     "status": "running",
-    "source_issue": "<value from PRD metadata table, or null>",
+    "source_issues": "<array from PRD metadata table, or null>",
     "created_at": "<ISO 8601 timestamp>"
   },
   "tasks": [
@@ -209,7 +210,7 @@ Once the user approves the plan, write `plans/<branch>-team-state.json` (schema:
 
 Rules:
 
-- `metadata.source_issue` — value extracted from the PRD metadata table in Step 1 (`"owner/repo#N"` or `null`).
+- `metadata.source_issues` — array extracted from the PRD metadata table in Step 1 (e.g. `["owner/repo#N"]`, or `null` if no rows found).
   **MUST NOT be mutated after the file is first written.**
 - `metadata.created_at` — current UTC timestamp in ISO 8601 format (e.g. `"2026-03-14T10:00:00Z"`).
 - All tasks have `"status": "pending"` and all timestamp/result fields `null`.
@@ -219,7 +220,7 @@ Rules:
 - `blocked_by` arrays contain the exact task IDs (strings) derived in Step 3.
 - `role_hint` values are assigned per Step 5b.
 
-**After writing the file, if `metadata.source_issue` is non-null:**
+**After writing the file, for each issue in `metadata.source_issues` (skip if null or empty):**
 
 1. Parse the issue reference into `<owner>`, `<repo>`, and `<N>` from the `owner/repo#N` format.
 2. Run:
@@ -236,4 +237,4 @@ Rules:
    visible warning line (`⚠ Warning: could not verify/assign issue — <error>`) and continue — do
    **NOT** block team creation.
 
-After this step (or immediately if `source_issue` is null), return to SKILL.md and proceed to Phase 2.
+After processing all issues (or immediately if `source_issues` is null), return to SKILL.md and proceed to Phase 2.

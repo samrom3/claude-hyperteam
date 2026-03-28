@@ -28,7 +28,7 @@ ______________________________________________________________________
 | `slug`         | string          | Short identifier derived from branch (e.g. `"user-auth"`).                                                                                                                     |
 | `prd_path`     | string          | Relative path to the PRD file (e.g. `"plans/feat-user-auth-prd.md"`).                                                                                                          |
 | `status`       | string          | Overall run status. One of: `"running"`, `"complete"`.                                                                                                                          |
-| `source_issue` | string \| null  | Optional. The GitHub issue that originated this work, in `"owner/repo#N"` format (e.g. `"samrom3/claude-hyper-plugs#13"`). `null` when no issue was provided. **MUST NOT be mutated after `team-state.json` is first written.** |
+| `source_issues` | string[] \| null | Optional. GitHub issues that originated this work, each in `"owner/repo#N"` format (e.g. `["samrom3/claude-hyper-plugs#13"]`). `null` or empty array when no issues were provided. **MUST NOT be mutated after `team-state.json` is first written.** |
 | `created_at`   | string          | ISO 8601 timestamp when the file was first written.                                                                                                                             |
 
 ### Example
@@ -39,7 +39,7 @@ ______________________________________________________________________
   "slug": "user-auth",
   "prd_path": "plans/feat-user-auth-prd.md",
   "status": "running",
-  "source_issue": null,
+  "source_issues": null,
   "created_at": "2026-03-14T10:00:00Z"
 }
 ```
@@ -188,7 +188,7 @@ ______________________________________________________________________
     "slug": "user-auth",
     "prd_path": "plans/feat-user-auth-prd.md",
     "status": "running",
-    "source_issue": null,
+    "source_issues": null,
     "created_at": "2026-03-14T10:00:00Z"
   },
   "tasks": [
