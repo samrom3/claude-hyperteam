@@ -10,6 +10,10 @@ user-invocable: true
 Creates a new ADR that supersedes an existing one, updates the old ADR's status, and maintains
 bidirectional cross-references in both files and the directory index.
 
+> ADRs are **additive only**: never delete or heavily rewrite an accepted ADR. This skill exists
+> so that the history of decisions is preserved — the old ADR remains readable, and the new ADR
+> explains what changed and why.
+
 ---
 
 ## Step 1 — Discover ADR directories
@@ -162,3 +166,24 @@ Inform the user:
 > Updated index: `<target_dir>/README.md`
 >
 > Review the new ADR and change the Status to `Accepted` when finalised.
+
+## Step 10 — Post-write validation
+
+Invoke `adr-check` in scoped mode against the superseded ADR (the file this skill directly
+modified in Step 7):
+
+```
+/adr-check <old_adr_path>
+```
+
+Display all output to the user.
+
+- If `adr-check` returns a structural **FAIL**: block completion and prompt the user to resolve
+  the issue before proceeding:
+  > The superseded ADR has a structural validation failure. Please fix the issue above before
+  > confirming this supersession is complete.
+- If `adr-check` emits style warnings only: display them and continue. Style warnings are
+  informational and do not block completion.
+
+Note: the new ADR (created via `adr-create` in Step 6) is already validated by `adr-create`'s
+own post-write step — do not run `adr-check` on it again here.
