@@ -7,6 +7,19 @@ ______________________________________________________________________
 ## Step 1 — Read and parse the PRD
 
 1. Read `plans/<branch>-prd.md` in full.
+   > **Metadata table:** If `/prd` was invoked with a GitHub issue URL, a metadata table appears
+   > **immediately after the H1 heading** and **before the first `##` section heading**, with this
+   > structure:
+   >
+   > ```markdown
+   > | Field        | Value        |
+   > | ------------ | ------------ |
+   > | Source Issue | owner/repo#N |
+   > ```
+   >
+   > Locate the H1 heading, then scan forward for a `| Source Issue |` row before any `##` line.
+   > Capture the value from the second cell as `<source_issue>` (e.g. `samrom3/claude-hyper-plugs#13`).
+   > If no such row is found before the first `##`, set `<source_issue>` to `null`.
 2. Extract all developer stories. Stories are headings that match:
    - `### FEAT-*` — feature implementation stories
    - `### DOC-*` — documentation stories
@@ -137,6 +150,7 @@ Once the user approves the plan, write `plans/<branch>-team-state.json` (schema:
     "slug": "<slug>",
     "prd_path": "plans/<branch>-prd.md",
     "status": "running",
+    "source_issue": "<value from PRD metadata table, or null>",
     "created_at": "<ISO 8601 timestamp>"
   },
   "tasks": [
@@ -195,6 +209,8 @@ Once the user approves the plan, write `plans/<branch>-team-state.json` (schema:
 
 Rules:
 
+- `metadata.source_issue` — value extracted from the PRD metadata table in Step 1 (`"owner/repo#N"` or `null`).
+  **MUST NOT be mutated after the file is first written.**
 - `metadata.created_at` — current UTC timestamp in ISO 8601 format (e.g. `"2026-03-14T10:00:00Z"`).
 - All tasks have `"status": "pending"` and all timestamp/result fields `null`.
 - All tasks have `"native_task_id": null` — native tasks are seeded by Phase 2 Step 3.
@@ -203,4 +219,21 @@ Rules:
 - `blocked_by` arrays contain the exact task IDs (strings) derived in Step 3.
 - `role_hint` values are assigned per Step 5b.
 
-After writing the file, return to SKILL.md and proceed to Phase 2.
+**After writing the file, if `metadata.source_issue` is non-null:**
+
+1. Parse the issue reference into `<owner>`, `<repo>`, and `<N>` from the `owner/repo#N` format.
+2. Run:
+   ```
+   gh issue view <N> --repo <owner>/<repo> --json assignees
+   ```
+   Parse the returned JSON and check whether the currently authenticated `gh` user (from
+   `gh auth status`) appears in the `assignees` array.
+3. If the authenticated user is **not** in the assignees list, run:
+   ```
+   gh issue edit <N> --repo <owner>/<repo> --add-assignee @me
+   ```
+4. If either command fails (unauthenticated `gh`, network error, insufficient permissions), print a
+   visible warning line (`⚠ Warning: could not verify/assign issue — <error>`) and continue — do
+   **NOT** block team creation.
+
+After this step (or immediately if `source_issue` is null), return to SKILL.md and proceed to Phase 2.
