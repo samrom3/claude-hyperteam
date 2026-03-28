@@ -15,6 +15,8 @@
     "commit-commands@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "agent-sdk-dev@claude-plugins-official": true,
-    "adr-wizard@hyper-plugs": true
+    "adr-wizard@hyper-plugs": true,
+    "explanatory-output-style@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true
   }
 }
