@@ -69,6 +69,12 @@ or from a seedling document:
 /hyperloop:prd plans/auth-seedling.md
 ```
 
+or linked to a GitHub issue:
+
+```
+/hyperloop:prd https://github.com/owner/repo/issues/42 Add user authentication
+```
+
 The PRD skill will:
 
 - Interview you to gather requirements (3 phases of refinement)
@@ -77,6 +83,34 @@ The PRD skill will:
 - Output `plans/<branch>-prd.md`
 
 You can generate multiple PRDs upfront — they accumulate in `plans/` and can be executed in any order.
+
+#### GitHub issue linking
+
+If you include a GitHub issue URL anywhere in your `/prd` arguments, hyperloop will:
+
+1. **Assign the issue** — runs `gh issue edit <N> --repo <owner>/<repo> --add-assignee @me`
+   immediately, so the issue is claimed as soon as PRD work begins. If `gh` is unauthenticated or
+   the assignment fails for any reason, a warning is printed but PRD creation continues.
+
+1. **Record the reference in the PRD** — writes a metadata table immediately after the PRD's H1
+   heading:
+
+   ```markdown
+   # My Feature
+
+   | Field        | Value              |
+   | ------------ | ------------------ |
+   | Source Issue | owner/repo#42      |
+
+   ## 1. Introduction/Overview
+   ```
+
+1. **Propagate to `team-state.json`** — Phase 1 reads the metadata table and stores
+   `metadata.source_issue` in `team-state.json` as the authoritative runtime value.
+
+1. **Auto-close via PR** — when the gate passes and a PR is created, Phase 4 appends
+   `Closes #N` (same-repo) or `Closes https://github.com/owner/repo/issues/N` (cross-repo) to
+   the PR body, so the issue closes automatically on merge.
 
 ### 2. Run the team
 

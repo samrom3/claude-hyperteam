@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `/prd` accepts a GitHub issue URL anywhere in its arguments. When detected, hyperloop:
+  - Assigns the issue to the authenticated `gh` user immediately (`gh issue edit --add-assignee @me`).
+    On failure, a visible warning is printed but PRD creation is not blocked.
+  - Writes a `| Source Issue | owner/repo#N |` metadata table immediately after the PRD's H1
+    heading and before `## 1.`, so the issue reference travels with the PRD.
+  - Stores `metadata.source_issue` in `team-state.json` during Phase 1 (parsed from the PRD
+    metadata table); `null` when no issue was provided. This field is immutable after first write.
+  - Appends a `Closes #N` (same-repo) or `Closes <URL>` (cross-repo) line to the PR body in
+    Phase 4, so the issue auto-closes on merge.
+- ADR-002: Two-location `source_issue` storage — documents the decision to store the issue
+  reference in both the PRD metadata table (for human visibility) and `team-state.json` (as the
+  authoritative runtime value), along with the canonical metadata table format spec.
+
+### Changed
+
+- Phase 1 (`phase-1-fresh-start.md`) now reads the PRD metadata table on startup and populates
+  `metadata.source_issue` in `team-state.json`. It also verifies issue assignment after writing
+  the state file, re-running the `gh issue edit` assignment if the user is not already assigned.
+- Phase 4 (`phase-4-completion.md`) PR body now conditionally includes a `Closes` keyword line
+  when `metadata.source_issue` is non-null.
+- `references/team-state-schema.md` documents `source_issue` as a formally specified optional
+  field in the `metadata` block.
+- `references/example-prd.md` guidance updated to show both the table-present and table-absent
+  PRD states.
+
 ## [1.2.0] - 2026-03-27
 
 ### Changed
