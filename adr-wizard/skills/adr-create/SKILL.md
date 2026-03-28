@@ -12,6 +12,43 @@ directory's README.md index.
 
 ---
 
+## Step 0 — Evaluate decision worthiness
+
+Before creating an ADR, assess whether the decision genuinely warrants one using the following
+signals and heuristics.
+
+**Qualifying signals** (at least one must apply):
+
+| Signal | Example |
+|--------|---------|
+| Cross-cutting concern — affects multiple modules, services, or teams | Choosing an authentication strategy |
+| Non-obvious to a new contributor — requires context not visible in the code | Why a non-standard folder layout was chosen |
+| Costly to reverse — migration cost is significant if undone | Switching databases or serialisation formats |
+| Multiple alternatives were considered — a deliberate choice was made among options | Evaluating three caching strategies before choosing one |
+
+**Detection heuristics:**
+- "Would a new contributor question this decision?"
+- "Did we discuss multiple approaches before choosing one?"
+- "Does this constrain future decisions or limit flexibility?"
+- "Is this intentionally inconsistent with surrounding code or convention?"
+
+**Explicit skip cases** (do not create an ADR for these):
+- Routine implementation choices (e.g., which loop construct to use)
+- Style preferences already captured by a linter or style guide
+- Decisions entirely local to one function or file with no broader impact
+
+**If no qualifying signal applies:** surface this to the user:
+
+```
+AskUserQuestion:
+  This decision may not meet the threshold for an ADR (no cross-cutting concern, no
+  significant reversal cost, no alternatives considered). Would you like to proceed
+  anyway, or does this need more context?
+```
+
+Wait for the user's response. If the user confirms the decision warrants an ADR, continue to
+Step 1. If the user chooses to abort, stop and explain what would qualify.
+
 ## Step 1 — Discover ADR directories
 
 1. Read the project's `CLAUDE.md`.
@@ -93,6 +130,10 @@ For each section, gather information as follows:
 
 ### Context
 
+**Quality criteria:** Describe the problem and the forces acting on the decision — not the
+solution. Avoid advocating for the chosen approach in this section. The reader should understand
+why a decision was needed, not be pre-sold on the answer.
+
 Write a short paragraph explaining **why** this decision is needed. Draw from:
 - The conversation history (what problem was being discussed?)
 - Recent code changes or files under discussion
@@ -102,6 +143,11 @@ If the conversation does not provide enough context, ask:
 > What problem or situation prompted this decision? What constraints are in play?
 
 ### Decision
+
+**Quality criteria:** Use active voice — "We decided to X" or "We will use Y". Be specific and
+declarative. Avoid passive constructions such as "it was felt that" or "it was agreed". State
+exactly what was chosen, not why (that belongs in Context) or what happens next (that belongs in
+Consequences).
 
 Write a few sentences stating **what** was decided. Be specific and declarative (e.g., "We will
 use PostgreSQL 16 as the primary data store for all user-facing services"). Draw from:
@@ -113,10 +159,15 @@ If the decision is ambiguous (e.g., the user only gave a vague title), ask:
 
 ### Consequences
 
+**Quality criteria:** Must include at least one genuinely adverse consequence or trade-off. An
+ADR that only lists benefits is less credible — every architectural choice involves giving
+something up. Target 200–400 words total for the consequences section. If substantially more is
+needed, consider whether the decision should be split into two ADRs.
+
 Write 3–7 bullet points covering both **positive** and **negative** consequences of this
 decision. Include:
 - Benefits the team expects to gain
-- Trade-offs or risks being accepted
+- Trade-offs or risks being accepted (at least one — required for credibility)
 - Any follow-up work this decision creates
 - Migration or compatibility implications, if applicable
 
@@ -167,3 +218,18 @@ Inform the user:
 > Updated index: `<target_dir>/README.md`
 >
 > Review the ADR and change the Status to `Accepted` when the decision is finalised.
+>
+> Tip: commit this ADR in the same PR as (or just before) the code it describes so the decision
+> and implementation are traceable together.
+
+## Step 9 — Post-write validation
+
+1. Invoke `adr-check` in scoped mode against the newly created ADR file:
+   `adr-check <target_dir>/<NNNN>-<slug>.md`
+2. Review the result:
+   - **Structural FAIL:** Block completion and present the issues to the user. Prompt them to
+     resolve the structural problems before the skill confirms completion. Offer to fix the issues
+     directly if they are straightforward (e.g., a missing section).
+   - **Style warnings:** Display the warnings to the user but do not block. The ADR is considered
+     complete; the user may choose to address the warnings or not.
+   - **PASS (no warnings):** The skill completes successfully with no further action.
