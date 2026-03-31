@@ -12,23 +12,45 @@ directory's README.md index.
 
 ---
 
-## Step 0 — Debate ADR necessity
+## Step 0 — Evaluate decision worthiness
 
-Before opening an ADR template, engage the user in a structured debate to establish that the
-decision warrants a permanent record. The debate serves two purposes: (1) filter decisions that
-do not meet the bar, and (2) surface the nuances of the decision in conversation — the richer
-this exchange, the better the ADR that follows, because the debate loads the agent's context with
-the substance that Steps 4–5 will draw on.
+### Phase A — Silent evaluation (always runs first)
 
-**Your posture is adversarial-constructive.** Argue *against* the ADR's necessity until the user
-has made a convincing case. Take explicit counterpoints. Do not be a passive facilitator — this
-is the first act of co-authorship, not a form to fill in.
+Using your domain knowledge and the full conversation context, assess the decision across these
+axes before engaging the user at all:
 
-### Opening the debate
+| Axis | What to assess |
+|------|---------------|
+| **Alternatives** | Do obvious alternatives exist in this domain? Would a knowledgeable engineer have weighed options, or was this effectively forced? |
+| **Scope** | Does the decision cross module, team, or service boundaries — or is it local to one function or file? |
+| **Reversibility** | Is the cost of undoing this significant (data migration, API contract change, team retraining)? |
+| **Tradeoffs** | Does the conversation context already surface what was given up? |
+| **Existing ADRs** | Does this decision extend, contradict, or supersede a prior architectural choice? |
 
-Read the user's decision summary (from the argument or conversation context). Identify which of
-the axes below are weakest, then raise 1–3 targeted challenges. You do not need to challenge all
-axes — press the ones where the case is thinnest.
+**If Phase A gives you a clear verdict**, act on it directly — no debate needed:
+
+- **Clear yes** (cross-cutting, meaningful alternatives existed, non-trivial reversal cost, or
+  intersects an existing ADR): proceed to Step 1 without engaging the user.
+- **Clear no** (routine implementation detail, derivable from code, no alternatives were
+  ever in play, entirely local): inform the user plainly, suggest a lighter alternative (inline
+  comment, team discussion note), and stop. No escape hatch — the assessment is confident.
+
+**If Phase A is inconclusive** — alternatives are ambiguous, tradeoffs are not surfaced in
+context, or the decision boundaries are unclear — proceed to Phase B.
+
+---
+
+### Phase B — Adversarial debate (only when Phase A is inconclusive)
+
+Engage the user to extract the information Phase A could not resolve. The debate loads your
+context with the substance Steps 4–5 will need; it also surfaces the decision's true shape,
+which may not match the user's original framing.
+
+**Your posture is adversarial-constructive.** Argue against the ADR's necessity — or against the
+framing — until the picture is clear. State challenges directly; do not soften them into
+questions with obvious answers.
+
+**Challenge axes** (raise 1–3 based on what Phase A left unresolved):
 
 | Axis | Counterpoint to raise |
 |------|-----------------------|
@@ -36,32 +58,21 @@ axes — press the ones where the case is thinnest.
 | **Obviousness** | "An experienced engineer reading the code would likely infer this from [Y]. What would they miss that the ADR adds?" |
 | **Reversibility** | "What is the real cost of undoing this? If it is low, a permanent record may not be warranted." |
 | **Alternatives** | "What alternatives did you actually consider? If only one option was ever on the table, this may be recording an outcome rather than a decision." |
-| **Novelty** | "Is this consistent with an existing ADR? If so, it may be an implementation of an already-approved pattern rather than a new architectural decision." |
+| **Novelty** | "Is this consistent with an existing ADR? If so, it may be implementing an already-approved pattern rather than making a new decision." |
 
-### Conducting the debate
+Conduct 1–2 exchanges. Steelman the user's responses, then counter if the case is still
+unconvincing. The debate ends when the picture is clear enough to route to an outcome.
 
-1. Raise your challenges. State them directly — do not soften them into questions with obvious
-   answers.
-2. Let the user respond. Steelman their position, then counter again if the case is still not
-   convincing.
-3. **If the user makes a convincing case** — they name real alternatives, demonstrate genuine
-   cross-cutting impact, or show that a new contributor would be materially misled without this
-   record — accept it without ceremony and proceed to Step 1. Do not offer the escape hatch.
-4. **Only if the user cannot substantiate their case** after one or two exchanges — they cannot
-   name alternatives, the impact is clearly local, or the decision is already derivable from
-   existing ADRs — surface the escape hatch:
+---
 
-   > "I'm not convinced this clears the bar for a permanent ADR. It may be better suited as an
-   > inline comment or a team discussion note. That said, you're the author — would you like to
-   > proceed anyway, or revisit the decision framing?"
+### Outcome routing (after Phase A or Phase B)
 
-   Use `AskUserQuestion` with options: **Proceed anyway** and **Revisit framing**. If the user
-   chooses to proceed, continue to Step 1. If they choose to revisit, restart the debate from
-   the top with their updated framing.
-
-**Do not offer the escape hatch as an opening move or after a single challenge.** It is a last
-resort, reached only when the debate has run its course and the user's case has not landed. The
-debate is the feature.
+| Outcome | Action |
+|---------|--------|
+| **Single ADR warranted** | Proceed to Step 1. |
+| **Multiple ADRs warranted** | The decision is compound. Surface each distinct decision to the user: "This looks like two separate decisions: [A] and [B]. I'll create them in sequence — starting with [A]." Proceed to Step 1 for the first; loop back to Step 0 for each subsequent. |
+| **Supersede or deprecate warranted** | The decision changes a prior architectural choice. Surface this: "This appears to supersede ADR-NNNN ([title]). I'll hand off to `/adr-supersede`." Stop and invoke the appropriate lifecycle skill. |
+| **Decision does not warrant an ADR** (Phase A clear no, or debate concludes no) | Explain why confidently. If Phase A was the source (clear no), stop without offering an escape hatch. If the debate concludes no, offer the escape hatch: "I'm not convinced this clears the bar for a permanent ADR. That said, you're the author — proceed anyway, or revisit the framing?" Use `AskUserQuestion` with **Proceed anyway** and **Revisit framing**. Revisit restarts Phase B with the updated framing; proceed continues to Step 1. |
 
 ## Step 1 — Discover ADR directories
 
