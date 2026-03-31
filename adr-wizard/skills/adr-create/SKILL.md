@@ -12,42 +12,56 @@ directory's README.md index.
 
 ---
 
-## Step 0 — Evaluate decision worthiness
+## Step 0 — Debate ADR necessity
 
-Before creating an ADR, assess whether the decision genuinely warrants one using the following
-signals and heuristics.
+Before opening an ADR template, engage the user in a structured debate to establish that the
+decision warrants a permanent record. The debate serves two purposes: (1) filter decisions that
+do not meet the bar, and (2) surface the nuances of the decision in conversation — the richer
+this exchange, the better the ADR that follows, because the debate loads the agent's context with
+the substance that Steps 4–5 will draw on.
 
-**Qualifying signals** (at least one must apply):
+**Your posture is adversarial-constructive.** Argue *against* the ADR's necessity until the user
+has made a convincing case. Take explicit counterpoints. Do not be a passive facilitator — this
+is the first act of co-authorship, not a form to fill in.
 
-| Signal | Example |
-|--------|---------|
-| Cross-cutting concern — affects multiple modules, services, or teams | Choosing an authentication strategy |
-| Non-obvious to a new contributor — requires context not visible in the code | Why a non-standard folder layout was chosen |
-| Costly to reverse — migration cost is significant if undone | Switching databases or serialisation formats |
-| Multiple alternatives were considered — a deliberate choice was made among options | Evaluating three caching strategies before choosing one |
+### Opening the debate
 
-**Detection heuristics:**
-- "Would a new contributor question this decision?"
-- "Did we discuss multiple approaches before choosing one?"
-- "Does this constrain future decisions or limit flexibility?"
-- "Is this intentionally inconsistent with surrounding code or convention?"
+Read the user's decision summary (from the argument or conversation context). Identify which of
+the axes below are weakest, then raise 1–3 targeted challenges. You do not need to challenge all
+axes — press the ones where the case is thinnest.
 
-**Explicit skip cases** (do not create an ADR for these):
-- Routine implementation choices (e.g., which loop construct to use)
-- Style preferences already captured by a linter or style guide
-- Decisions entirely local to one function or file with no broader impact
+| Axis | Counterpoint to raise |
+|------|-----------------------|
+| **Scope** | "This sounds contained to [X]. Why does someone working on a different part of the system six months from now need to know about it?" |
+| **Obviousness** | "An experienced engineer reading the code would likely infer this from [Y]. What would they miss that the ADR adds?" |
+| **Reversibility** | "What is the real cost of undoing this? If it is low, a permanent record may not be warranted." |
+| **Alternatives** | "What alternatives did you actually consider? If only one option was ever on the table, this may be recording an outcome rather than a decision." |
+| **Novelty** | "Is this consistent with an existing ADR? If so, it may be an implementation of an already-approved pattern rather than a new architectural decision." |
 
-**If no qualifying signal applies:** surface this to the user:
+### Conducting the debate
 
-```
-AskUserQuestion:
-  This decision may not meet the threshold for an ADR (no cross-cutting concern, no
-  significant reversal cost, no alternatives considered). Would you like to proceed
-  anyway, or does this need more context?
-```
+1. Raise your challenges. State them directly — do not soften them into questions with obvious
+   answers.
+2. Let the user respond. Steelman their position, then counter again if the case is still not
+   convincing.
+3. **If the user makes a convincing case** — they name real alternatives, demonstrate genuine
+   cross-cutting impact, or show that a new contributor would be materially misled without this
+   record — accept it without ceremony and proceed to Step 1. Do not offer the escape hatch.
+4. **Only if the user cannot substantiate their case** after one or two exchanges — they cannot
+   name alternatives, the impact is clearly local, or the decision is already derivable from
+   existing ADRs — surface the escape hatch:
 
-Wait for the user's response. If the user confirms the decision warrants an ADR, continue to
-Step 1. If the user chooses to abort, stop and explain what would qualify.
+   > "I'm not convinced this clears the bar for a permanent ADR. It may be better suited as an
+   > inline comment or a team discussion note. That said, you're the author — would you like to
+   > proceed anyway, or revisit the decision framing?"
+
+   Use `AskUserQuestion` with options: **Proceed anyway** and **Revisit framing**. If the user
+   chooses to proceed, continue to Step 1. If they choose to revisit, restart the debate from
+   the top with their updated framing.
+
+**Do not offer the escape hatch as an opening move or after a single challenge.** It is a last
+resort, reached only when the debate has run its course and the user's case has not landed. The
+debate is the feature.
 
 ## Step 1 — Discover ADR directories
 
