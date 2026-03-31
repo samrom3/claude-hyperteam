@@ -33,12 +33,12 @@ claude plugin install adr-wizard@hyper-plugs
 
 ## Skills<a name="skills"></a>
 
-| Skill           | Command          | Description                                                    |
-| --------------- | ---------------- | -------------------------------------------------------------- |
-| `adr-create`    | `/adr-create`    | Create a new ADR with auto-numbering and index updates         |
-| `adr-supersede` | `/adr-supersede` | Supersede an existing ADR, with bidirectional cross-references |
-| `adr-deprecate` | `/adr-deprecate` | Deprecate an ADR with a recorded reason                        |
-| `adr-check`     | `/adr-check`     | Validate all ADRs for structural integrity and index sync      |
+| Skill           | Command             | Description                                                                                                     |
+| --------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `adr-create`    | `/adr-create`       | Create a new ADR with auto-numbering and index updates                                                          |
+| `adr-supersede` | `/adr-supersede`    | Supersede an existing ADR, with bidirectional cross-references                                                  |
+| `adr-deprecate` | `/adr-deprecate`    | Deprecate an ADR with a recorded reason                                                                         |
+| `adr-check`     | `/adr-check [file]` | Validate ADRs for structural integrity, index sync, and advisory style checks; supports scoped single-file mode |
 
 ### adr-create<a name="adr-create"></a>
 
@@ -56,9 +56,13 @@ context, and updates the directory index. If no ADR directory exists, offers to 
 # create an ADR automatically based on what you've described.
 ```
 
-The skill discovers your ADR directory from CLAUDE.md, finds the next available number, and
-writes `NNNN-<slug>.md` with Context, Decision, and Consequences drafted from your conversation.
-It interviews you via `AskUserQuestion` only for details it cannot infer.
+The skill first evaluates whether the decision warrants an ADR (four qualifying signals: cross-cutting
+concern, non-obvious to a new contributor, costly to reverse, or multiple alternatives considered).
+If no signal applies it will ask for confirmation before proceeding. It then discovers your ADR
+directory from CLAUDE.md, finds the next available number, and writes `NNNN-<slug>.md` with
+Context, Decision, and Consequences drafted from your conversation. It interviews you via
+`AskUserQuestion` only for details it cannot infer. After writing the file it runs `/adr-check`
+in scoped mode to validate the new ADR and surfaces any issues before confirming completion.
 
 ### adr-supersede<a name="adr-supersede"></a>
 
@@ -93,14 +97,20 @@ future readers understand what changed and why.
 
 Validates all ADR directories for structural integrity, index sync, and cross-reference
 consistency. Also scans `git diff` for patterns that may indicate undocumented architectural
-decisions (advisory warnings only).
+decisions (advisory warnings only). Emits advisory style warnings when the `## Consequences`
+section of an ADR contains no clearly adverse consequence or trade-off.
 
 ```
+# Whole-directory mode — validates all ADR directories
 /adr-check
+
+# Scoped mode — validates a single file only (structural + style checks; skips index/cross-ref/diff)
+/adr-check path/to/NNNN-adr-file.md
 ```
 
 Exit result: **PASS** (all checks clear) or **FAIL** (with a remediation report listing exactly
-what needs fixing and in which files).
+what needs fixing and in which files). Style warnings are advisory only and do not affect the
+pass/fail result.
 
 ## ADR Location Convention<a name="adr-location-convention"></a>
 

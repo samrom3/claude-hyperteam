@@ -1,6 +1,6 @@
 {
   "name": "adr-wizard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "ADR lifecycle management for Claude Code. Create, supersede, deprecate, and validate Architecture Decision Records across multiple directories using a CLAUDE.md convention for ADR location discovery.",
   "author": {
     "name": "Sam Romano",

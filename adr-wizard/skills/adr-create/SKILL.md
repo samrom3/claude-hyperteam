@@ -1,6 +1,6 @@
 ---
 name: adr-create
-description: "Create a new Architecture Decision Record (ADR) in the correct directory with auto-numbering and index updates. Triggers when the user or model discusses an architectural decision, design choice, technical decision, or needs to document a new architectural pattern, technology selection, or system design choice. Invocable via /adr-create <decision summary>."
+description: "This skill should be used when the user asks to 'create an ADR', 'document an architectural decision', 'record a design decision', 'write an architecture decision record', or when the model identifies an architectural decision in context that warrants formal documentation. Evaluates decision worthiness before authoring and guides section drafting."
 argument-hint: "Brief description of the architectural decision (e.g., 'Use PostgreSQL for primary storage')"
 user-invocable: true
 ---
@@ -11,6 +11,68 @@ Creates a new ADR file with auto-numbering, fills it from the Nygard template, a
 directory's README.md index.
 
 ---
+
+## Step 0 — Evaluate decision worthiness
+
+### Phase A — Silent evaluation (always runs first)
+
+Using domain knowledge and the full conversation context, assess the decision across these
+axes before engaging the user at all:
+
+| Axis | What to assess |
+|------|---------------|
+| **Alternatives** | Do obvious alternatives exist in this domain? Would a knowledgeable engineer have weighed options, or was this effectively forced? |
+| **Scope** | Does the decision cross module, team, or service boundaries — or is it local to one function or file? |
+| **Reversibility** | Is the cost of undoing this significant (data migration, API contract change, team retraining)? |
+| **Tradeoffs** | Does the conversation context already surface what was given up? |
+| **Existing ADRs** | Does this decision extend, contradict, or supersede a prior architectural choice? |
+
+**If Phase A yields a clear verdict**, act on it directly — no debate needed:
+
+- **Clear yes** (cross-cutting, meaningful alternatives existed, non-trivial reversal cost, or
+  intersects an existing ADR): proceed to Step 1 without engaging the user.
+- **Clear no** (routine implementation detail, derivable from code, no alternatives were
+  ever in play, entirely local): inform the user plainly, suggest a lighter alternative (inline
+  comment, team discussion note), and stop. No escape hatch — the assessment is confident.
+
+**If Phase A is inconclusive** — alternatives are ambiguous, tradeoffs are not surfaced in
+context, or the decision boundaries are unclear — proceed to Phase B.
+
+---
+
+### Phase B — Adversarial debate (only when Phase A is inconclusive)
+
+Engage the user to extract the information Phase A could not resolve. The debate loads the
+agent's context with the substance Steps 4–5 will need; it also surfaces the decision's true
+shape, which may not match the user's original framing.
+
+**Your posture is adversarial-constructive.** Argue against the ADR's necessity — or against the
+framing — until the picture is clear. State challenges directly; do not soften them into
+questions with obvious answers.
+
+**Challenge axes** (raise 1–3 based on what Phase A left unresolved):
+
+| Axis | Counterpoint to raise |
+|------|-----------------------|
+| **Scope** | "This sounds contained to [X]. Why does someone working on a different part of the system six months from now need to know about it?" |
+| **Obviousness** | "An experienced engineer reading the code would likely infer this from [Y]. What would they miss that the ADR adds?" |
+| **Reversibility** | "What is the real cost of undoing this? If it is low, a permanent record may not be warranted." |
+| **Alternatives** | "What alternatives did you actually consider? If only one option was ever on the table, this may be recording an outcome rather than a decision." |
+| **Novelty** | "Is this consistent with an existing ADR? If so, it may be implementing an already-approved pattern rather than making a new decision." |
+
+Conduct 1–2 exchanges. Steelman the user's responses, then counter if the case is still
+unconvincing. The debate ends when the picture is clear enough to route to an outcome.
+
+---
+
+### Outcome routing (after Phase A or Phase B)
+
+| Outcome | Action |
+|---------|--------|
+| **Single ADR warranted** | Proceed to Step 1. |
+| **Multiple ADRs warranted** | The decision is compound. Surface each distinct decision to the user: "This looks like two separate decisions: [A] and [B]. I'll create them in sequence — starting with [A]." Proceed to Step 1 for the first; loop back to Step 0 for each subsequent. |
+| **Supersede or deprecate warranted** | The decision changes a prior architectural choice. Surface this: "This appears to supersede ADR-NNNN ([title]). I'll hand off to `/adr-supersede`." Stop and invoke the appropriate lifecycle skill. |
+| **Decision does not warrant an ADR** (Phase A clear no, or debate concludes no) | Explain why confidently. If Phase A was the source (clear no), stop without offering an escape hatch. If the debate concludes no, offer the escape hatch: "I'm not convinced this clears the bar for a permanent ADR. That said, you're the author — proceed anyway, or revisit the framing?" Use `AskUserQuestion` with **Proceed anyway** and **Revisit framing**. Revisit restarts Phase B with the updated framing; proceed continues to Step 1. |
 
 ## Step 1 — Discover ADR directories
 
@@ -86,12 +148,16 @@ characters replaced with hyphens.
 
 The skill is responsible for authoring every section of the ADR — do not leave template
 placeholders for the user. Infer content from the conversation context, codebase state, and
-`decision_summary`. When you lack enough information to write a section confidently, use
+`decision_summary`. When information is insufficient to write a section confidently, use
 `AskUserQuestion` to interview the user before proceeding.
 
 For each section, gather information as follows:
 
 ### Context
+
+**Quality criteria:** Describe the problem and the forces acting on the decision — not the
+solution. Avoid advocating for the chosen approach in this section. The reader should understand
+why a decision was needed, not be pre-sold on the answer.
 
 Write a short paragraph explaining **why** this decision is needed. Draw from:
 - The conversation history (what problem was being discussed?)
@@ -103,6 +169,11 @@ If the conversation does not provide enough context, ask:
 
 ### Decision
 
+**Quality criteria:** Use active voice — "We decided to X" or "We will use Y". Be specific and
+declarative. Avoid passive constructions such as "it was felt that" or "it was agreed". State
+exactly what was chosen, not why (that belongs in Context) or what happens next (that belongs in
+Consequences).
+
 Write a few sentences stating **what** was decided. Be specific and declarative (e.g., "We will
 use PostgreSQL 16 as the primary data store for all user-facing services"). Draw from:
 - The `decision_summary` argument
@@ -113,19 +184,24 @@ If the decision is ambiguous (e.g., the user only gave a vague title), ask:
 
 ### Consequences
 
+**Quality criteria:** Must include at least one genuinely adverse consequence or trade-off. An
+ADR that only lists benefits is less credible — every architectural choice involves giving
+something up. Target 200–400 words total for the consequences section. If substantially more is
+needed, consider whether the decision should be split into two ADRs.
+
 Write 3–7 bullet points covering both **positive** and **negative** consequences of this
 decision. Include:
 - Benefits the team expects to gain
-- Trade-offs or risks being accepted
+- Trade-offs or risks being accepted (at least one — required for credibility)
 - Any follow-up work this decision creates
 - Migration or compatibility implications, if applicable
 
-If you cannot infer consequences from context, ask:
+If consequences cannot be inferred from context, ask:
 > What are the main benefits and trade-offs of this decision? Any follow-up work it creates?
 
 ### Interview flow
 
-Batch your questions — if you need clarity on multiple sections, ask them together in a single
+Batch questions — if clarity is needed on multiple sections, ask them together in a single
 `AskUserQuestion` call rather than one at a time. Proceed to file creation only after all
 sections have substantive content.
 
@@ -167,3 +243,18 @@ Inform the user:
 > Updated index: `<target_dir>/README.md`
 >
 > Review the ADR and change the Status to `Accepted` when the decision is finalised.
+>
+> Tip: commit this ADR in the same PR as (or just before) the code it describes so the decision
+> and implementation are traceable together.
+
+## Step 9 — Post-write validation
+
+1. Invoke `adr-check` in scoped mode against the newly created ADR file:
+   `adr-check <target_dir>/<NNNN>-<slug>.md`
+2. Review the result:
+   - **Structural FAIL:** Block completion and present the issues to the user. Prompt them to
+     resolve the structural problems before the skill confirms completion. Offer to fix the issues
+     directly if they are straightforward (e.g., a missing section).
+   - **Style warnings:** Display the warnings to the user but do not block. The ADR is considered
+     complete; the user may choose to address the warnings or not.
+   - **PASS (no warnings):** The skill completes successfully with no further action.

@@ -1,6 +1,6 @@
 ---
 name: adr-deprecate
-description: "Deprecate an existing Architecture Decision Record (ADR) that is no longer relevant, recording the reason while preserving history. Use when an architectural decision, design choice, or technical decision is obsolete or no longer applicable. Invocable via /adr-deprecate <ADR number> <reason for deprecation>."
+description: "This skill should be used when the user asks to 'deprecate an ADR', 'mark an ADR as obsolete', 'retire an architectural decision', 'flag an ADR as no longer applicable', or when an existing architectural decision is no longer relevant and should be marked as deprecated while preserving history."
 argument-hint: "ADR number to deprecate and why (e.g., '5 No longer applicable after migration to microservices')"
 user-invocable: true
 ---
@@ -9,6 +9,10 @@ user-invocable: true
 
 Marks an existing ADR as deprecated, records the reason in the file, and updates the directory's
 README.md index.
+
+> ADRs are **additive only**: never delete or heavily rewrite an accepted ADR. This skill exists
+> so that the history of decisions is preserved — the old ADR remains readable, and the new ADR
+> explains what changed and why.
 
 ---
 
@@ -100,3 +104,20 @@ Inform the user:
 > Reason: <deprecation_reason>
 > Updated: `<target_dir>/<NNNN>-<slug>.md`
 > Updated index: `<target_dir>/README.md`
+
+## Step 8 — Post-write validation
+
+Invoke `adr-check` in scoped mode against the deprecated ADR file:
+
+```
+/adr-check <deprecated_adr_path>
+```
+
+Display all output to the user.
+
+- If `adr-check` returns a structural **FAIL**: block completion and prompt the user to resolve
+  the issue before proceeding:
+  > The deprecated ADR has a structural validation failure. Please fix the issue above before
+  > confirming this deprecation is complete.
+- If `adr-check` emits style warnings only: display them and continue. Style warnings are
+  informational and do not block completion.

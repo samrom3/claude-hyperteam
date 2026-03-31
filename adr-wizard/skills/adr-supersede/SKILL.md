@@ -1,6 +1,6 @@
 ---
 name: adr-supersede
-description: "Supersede an existing Architecture Decision Record (ADR) with a new one, preserving history with bidirectional cross-references. Use when an architectural decision, design choice, or technical decision has changed and the old ADR needs to be replaced. Invocable via /adr-supersede <old ADR#>[->new ADR#] <new decision and reason>."
+description: "This skill should be used when the user asks to 'supersede an ADR', 'replace an architectural decision', 'update an ADR with a new decision', 'mark an ADR as superseded', or when an existing architectural decision has changed and needs to be replaced while preserving the historical record."
 argument-hint: "Old ADR number, optional arrow to existing new ADR number, and the new decision or reason (e.g., '3 Switching from PostgreSQL to CockroachDB for horizontal scaling' or '3->7 CockroachDB chosen to replace PostgreSQL')"
 user-invocable: true
 ---
@@ -9,6 +9,10 @@ user-invocable: true
 
 Creates a new ADR that supersedes an existing one, updates the old ADR's status, and maintains
 bidirectional cross-references in both files and the directory index.
+
+> ADRs are **additive only**: never delete or heavily rewrite an accepted ADR. This skill exists
+> so that the history of decisions is preserved — the old ADR remains readable, and the new ADR
+> explains what changed and why.
 
 ---
 
@@ -79,7 +83,7 @@ From these sources, derive:
 - `new_decision`: what the new decision is, stated specifically and declaratively.
 
 If any of these cannot be confidently inferred, interview the user with `AskUserQuestion`.
-Batch questions together — for example, if you need both the new title and the rationale:
+Batch questions together — for example, if both the new title and rationale are needed:
 
 > I'm superseding ADR-NNNN (<old_title>). To write the replacement ADR, I need:
 >
@@ -114,9 +118,9 @@ Write 3–7 bullet points covering:
 - Any follow-up work required (e.g., "migrate existing data", "update deployment configs")
 - What becomes easier vs. harder compared to the superseded approach
 
-If you cannot infer consequences confidently, ask:
-> What are the key benefits of the new approach, and what migration or transition costs do you
-> anticipate?
+If consequences cannot be inferred confidently, ask:
+> What are the key benefits of the new approach, and what migration or transition costs are
+> anticipated?
 
 ## Step 6 — Create the new ADR via adr-create
 
@@ -162,3 +166,24 @@ Inform the user:
 > Updated index: `<target_dir>/README.md`
 >
 > Review the new ADR and change the Status to `Accepted` when finalised.
+
+## Step 10 — Post-write validation
+
+Invoke `adr-check` in scoped mode against the superseded ADR (the file this skill directly
+modified in Step 7):
+
+```
+/adr-check <old_adr_path>
+```
+
+Display all output to the user.
+
+- If `adr-check` returns a structural **FAIL**: block completion and prompt the user to resolve
+  the issue before proceeding:
+  > The superseded ADR has a structural validation failure. Please fix the issue above before
+  > confirming this supersession is complete.
+- If `adr-check` emits style warnings only: display them and continue. Style warnings are
+  informational and do not block completion.
+
+Note: the new ADR (created via `adr-create` in Step 6) is already validated by `adr-create`'s
+own post-write step — do not run `adr-check` on it again here.

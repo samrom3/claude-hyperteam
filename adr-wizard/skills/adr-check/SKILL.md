@@ -1,34 +1,53 @@
 ---
 name: adr-check
-description: "Validate that all Architecture Decision Records (ADRs) are in sync with the codebase — checks ADR structure, status fields, index consistency, and cross-references. Surfaces git-diff-based warnings for undocumented architectural decisions. Invocable via /adr-check or by gate agents performing ADR validation."
+description: "This skill should be used when the user asks to 'validate ADRs', 'check ADR structure', 'run adr-check', 'check for undocumented decisions', or when lifecycle skills and gate agents need to validate ADR files. Supports Global mode (all discovered ADR directories, including diff-based warnings), Scoped mode (single file, directory, or natural-language query — no diff noise), and future Diff mode."
 user-invocable: true
+argument-hint: "[optional: path/to/NNNN-adr-file.md | path/to/adrs/ | natural language query]"
 ---
 
 # adr-check
 
-Validates all ADR directories against the contract defined in
-`references/adr-check-contract.md`. Outputs a structured pass/fail report per directory, plus
-advisory diff-based warnings.
+Validates ADRs against the contract defined in `references/adr-check-contract.md`. Supports
+three modes:
+
+* **Global** (all discovered ADR directories, including diff-based warnings),
+* **Scoped** (a single file, a directory, or a natural-language query — no diff-based noise), and
+* **Diff** (ADRs changed in the current branch).
+
+Outputs a structured pass/fail report with a consistent header, regardless of mode.
 
 ---
 
-## Step 1 — Discover ADR directories
+## Step 1 — Determine mode and discover inputs
 
-1. Read the project's `CLAUDE.md`.
-2. Search for any heading containing `ADR Locations` (case-insensitive, any heading level).
-3. If found, collect each bullet list item as a relative path, stripping inline `# comments`.
-   Store as `adr_dirs`.
-4. If not found, fall back: scan the repository root for `docs/adrs/`, `decisions/`, and
-   `architecture/decisions/`. Use whichever exist.
-5. If `adr_dirs` is empty after both methods, output:
-   ```
-   ADR Check Report
-   ================
-   WARNING: No ADR directories found. Skipping validation.
+1. Inspect the skill argument (the text following `/adr-check`, if any):
 
-   Overall: PASS
-   ```
-   Stop. (No ADR directories is not a failure — nothing to validate.)
+   - **No argument** → `mode = global`. Continue with directory discovery (steps 2–6).
+
+   - **Argument resolves to a `.md` file** → `mode = scoped_file`, `target = <path>`.
+     Skip directory discovery. Proceed to Step 2 with only that file as target.
+     Checks 2.2, 2.3, and Step 4 are skipped entirely.
+
+   - **Argument resolves to a directory** → `mode = scoped_dir`, `target = <directory>`.
+     Skip CLAUDE.md discovery. Use `target` as the sole entry in `adr_dirs`.
+     Run Checks 2.1, 2.1e, 2.2, and 2.3 for that directory. Skip Step 4.
+
+   - **Any other non-empty argument** → `mode = scoped_query`, `query = <argument>`.
+     Run directory discovery (steps 2–6) to locate all ADR files. Then use model judgment
+     to identify which ADR files match the natural-language query. Use those files as the
+     validation target. Run only Checks 2.1 and 2.1e against each matched file. Skip 2.2,
+     2.3, and Step 4. If no ADRs match the query, emit an advisory warning and exit PASS.
+
+2. *(global and scoped_query only)* Read the project's `CLAUDE.md`.
+3. *(global and scoped_query only)* Search for any heading containing `ADR Locations`
+   (case-insensitive, any heading level).
+4. *(global and scoped_query only)* If found, collect each bullet list item as a relative path,
+   stripping inline `# comments`. Store as `adr_dirs`.
+5. *(global and scoped_query only)* If not found, fall back: scan the repository root for
+   `docs/adrs/`, `decisions/`, and `architecture/decisions/`. Use whichever exist.
+6. *(global only)* If `adr_dirs` is empty after both methods, output a report with
+   `Mode: Global` and emit: `WARNING: No ADR directories found. Skipping validation.`
+   Set `Overall: PASS` and stop.
 
 ## Step 2 — Validate each directory
 
@@ -51,8 +70,16 @@ For each directory in `adr_dirs`, run all checks below. Track failures as a list
    d. **Consequences present:** The file contains a `## Consequences` section. Content may be
       brief. If entirely absent, add issue:
       `[ADR-NNNN] ## Consequences section is missing`
+   e. **Consequences quality (style check):** Using model judgment — not keyword matching —
+      assess whether the `## Consequences` section contains at least one genuinely adverse
+      outcome. Qualifying examples: a known risk, a trade-off, a migration cost, an increase in
+      complexity, a performance regression, reduced flexibility, or an explicit statement of what
+      is being given up. If no such adverse consequence is found, add a **style warning** (not a
+      structural issue):
+      `[ADR-NNNN] Consequences section contains no clearly adverse consequence or trade-off — consider adding one for credibility`
+      Style warnings do not affect the pass/fail result and are reported separately (see Step 3).
 
-### Check 2.2 — Index sync
+### Check 2.2 — Index sync *(whole-directory mode only)*
 
 1. Check if `<dir>/README.md` exists.
    - If it does not exist, add issue: `README.md index is missing from <dir>`
@@ -63,7 +90,7 @@ For each directory in `adr_dirs`, run all checks below. Track failures as a list
 4. For each entry in the README.md table, check the referenced ADR file exists. If not, add
    issue: `[index entry] README.md references <filename> but file does not exist (orphaned entry)`
 
-### Check 2.3 — Cross-reference integrity
+### Check 2.3 — Cross-reference integrity *(whole-directory mode only)*
 
 1. For each ADR file with a status of `Superseded by ADR-NNNN`:
    a. Verify `NNNN-*.md` exists in the directory. If not, add issue:
@@ -79,36 +106,53 @@ For each directory in `adr_dirs`, run all checks below. Track failures as a list
 
 ## Step 3 — Build the validation report
 
-For each directory in `adr_dirs`:
-- If `issues` is empty: status = PASS
-- If `issues` is non-empty: status = FAIL
+Separate all items collected from Check 2.1e into a `style_warnings` list. These are NOT counted
+as structural issues and do NOT affect status.
 
-Output:
+For each validated target (directory or file):
+- If structural issues (2.1a–2.1d) are present: status = FAIL
+- Otherwise: status = PASS
+
+Output the report using the structure below. The header rows (`Mode`, `Target`, `ADRs`) are
+**always present** regardless of mode — they provide context for all rows that follow.
 
 ```
 ADR Check Report
 ================
 
-Directory: <path>
+Mode:    Global | Scoped (file) | Scoped (directory) | Scoped (query)
+Target:  <path, directory, or natural-language query>
+ADRs:    <comma-separated list of all validated ADR filenames>
+
+Results
+-------
+<path/to/directory-or-file>:
   Status: PASS | FAIL
   Issues:
-    - <issue 1>
-    - <issue 2>
-    ...
+    - [ADR-NNNN] <issue description>
 
-Directory: <path>
+<path/to/next-item>:
   Status: PASS
   Issues: none
+
+Style Warnings (advisory only — not gate-blocking)
+===================================================
+  - [ADR-NNNN] <style warning message>
 
 Overall: PASS | FAIL
 ```
 
-If any directory has status FAIL, `Overall` is FAIL. Otherwise PASS.
+**Results grouping:** In `global` and `scoped_dir` modes, group results by directory path. In
+`scoped_file` and `scoped_query` modes, list each validated file as its own result entry.
+
+The `Style Warnings` section appears only when `style_warnings` is non-empty; omit it otherwise.
+
+If any result entry has status FAIL, `Overall` is FAIL. Otherwise PASS.
 
 On FAIL, append a `Remediation` section listing each issue with the specific file and the action
 needed to fix it.
 
-## Step 4 — Diff-based warnings (advisory only)
+## Step 4 — Diff-based warnings *(Global mode only — skip in all scoped sub-modes)*
 
 1. Run `git diff HEAD` to capture staged + unstaged changes.
 2. Scan the diff output for these patterns:
@@ -134,5 +178,10 @@ needed to fix it.
 
 Print the full report. The overall result determines the exit signal to callers:
 
-- **PASS** (with or without warnings): success. Gate consumers should continue.
+- **PASS** (with or without diff-based warnings or style warnings): success. Gate consumers
+  should continue.
 - **FAIL**: failure. Gate consumers should block and present the remediation steps to the user.
+
+## Additional Resources
+
+- **`references/adr-check-contract.md`** — Full contract specification: discovery rules, validation checks (2.1–2.3, 2.1e), report format, pass/fail semantics, and invocation modes.
