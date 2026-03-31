@@ -8,10 +8,13 @@ argument-hint: "[optional: path/to/NNNN-adr-file.md | path/to/adrs/ | natural la
 # adr-check
 
 Validates ADRs against the contract defined in `references/adr-check-contract.md`. Supports
-three modes: **Global** (all discovered ADR directories, including diff-based warnings),
-**Scoped** (a single file, a directory, or a natural-language query — no diff-based noise), and
-future **Diff** mode (ADRs changed in the current branch). Outputs a structured pass/fail report
-with a consistent header regardless of mode.
+three modes:
+
+* **Global** (all discovered ADR directories, including diff-based warnings),
+* **Scoped** (a single file, a directory, or a natural-language query — no diff-based noise), and
+* **Diff** (ADRs changed in the current branch).
+
+Outputs a structured pass/fail report with a consistent header, regardless of mode.
 
 ---
 
