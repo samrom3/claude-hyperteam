@@ -118,7 +118,6 @@ On user approval, write `plans/<branch>-team-state.json` (schema: `references/te
       "skills": ["<skill_name>"],
       "status": "pending",
       "blocked_by": [],
-      "native_task_id": null,
       "started_at": null,
       "completed_at": null,
       "reviewed": false,
@@ -134,7 +133,6 @@ On user approval, write `plans/<branch>-team-state.json` (schema: `references/te
       "skills": ["hyperwork-tech-writing"],
       "status": "pending",
       "blocked_by": ["FEAT-<slug>-01"],
-      "native_task_id": null,
       "started_at": null,
       "completed_at": null,
       "reviewed": false,
@@ -150,7 +148,6 @@ On user approval, write `plans/<branch>-team-state.json` (schema: `references/te
       "skills": [],
       "status": "pending",
       "blocked_by": ["<all FEAT and DOC task IDs>"],
-      "native_task_id": null,
       "started_at": null,
       "completed_at": null,
       "reviewed": false,
@@ -168,7 +165,6 @@ Rules:
 - `metadata.source_issues` — array from spec metadata table Step 1 (e.g. `["owner/repo#N"]`, or `null` if none). **MUST NOT be mutated after first write.**
 - `metadata.created_at` — current UTC timestamp, ISO 8601 (e.g. `"2026-03-14T10:00:00Z"`).
 - All tasks: `"status": "pending"`, all timestamp/result fields `null`.
-- All tasks: `"native_task_id": null` — native tasks seeded by Phase 2 Step 3.
 - All FEAT tasks: `"reviewed": false`.
 - Task order: FEAT (spec order) → DOC (spec order) → GATE.
 - `blocked_by` arrays: exact task ID strings from Step 3.
