@@ -13,9 +13,19 @@ Taken when `plans/<branch>-team-state.json` already exists.
 
 ## Step 2 — Reconcile state
 
+Before reconciling, revert uncommitted/unstaged changes:
+
+```bash
+git stash --include-untracked
+# or: git checkout -- . && git clean -fd
+```
+
+Any discarded work was interrupted mid-task. Its JSON `status` will be `pending` (workers write `completed` only on successful commit) → re-enters queue naturally.
+
+Reconcile:
+
 - Tasks with `status: completed` or `status: validated` → done, leave them.
-- Tasks with `status: in_progress` → interrupted, reset to `pending`.
-- Clear `native_task_id` to `null` on **every** task (pending and reset) — re-seeded in Step 5.
+- All other tasks remain `pending` — no resets needed.
 - `team-state.json` wins over `progress.txt` on disagreement.
 
 ---
@@ -45,8 +55,7 @@ Use `AskUserQuestion`:
 ## Step 5 — Proceed or stop
 
 - **User confirms:**
-  1. Write updated `team-state.json` (`in_progress` tasks reset to `pending`, all `native_task_id` cleared to `null`).
-  2. Re-seed native task list: per `status: pending` task, call `TaskCreate` with YAML front-matter and full step text as `description`:
+  1. Re-seed native task list: per `status: pending` task, call `TaskCreate` with YAML front-matter and full step text as `description`:
 
      ```
      ---
@@ -61,8 +70,6 @@ Use `AskUserQuestion`:
      <full step text and acceptance criteria>
      ```
 
-  3. Store each returned UUID as `native_task_id` in corresponding task object in `team-state.json`.
-  4. Write updated `team-state.json` to disk.
-  5. Return to SKILL.md, proceed to Phase 2.
+  2. Return to SKILL.md, proceed to Phase 2.
 
 - **User declines** — stop. Leave state files unchanged.
