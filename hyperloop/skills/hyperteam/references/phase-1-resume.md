@@ -54,7 +54,10 @@ Use `AskUserQuestion`:
 ## Step 5 — Proceed or stop
 
 - **User confirms:**
-  1. Re-seed native task list: per `status: pending` task, call `TaskCreate` with YAML front-matter and full step text as `description`:
+  1. Cancel orphaned native tasks from prior session: call `TaskList`, then `TaskStop` any task
+     whose YAML front-matter `id` matches a `status: pending` task in `team-state.json`. Prevents
+     duplicate tasks when re-seeding.
+  2. Re-seed native task list: per `status: pending` task, call `TaskCreate` with YAML front-matter and full step text as `description`:
 
      ```
      ---
@@ -69,6 +72,6 @@ Use `AskUserQuestion`:
      <full step text and acceptance criteria>
      ```
 
-  2. Return to SKILL.md, proceed to Phase 2.
+  3. Return to SKILL.md, proceed to Phase 2.
 
 - **User declines** — stop. Leave state files unchanged.
