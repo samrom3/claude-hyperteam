@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - ADR-004: documents the revert-uncommitted-on-resume decision and its rationale.
+- `session-spec` skill detects `CHANGELOG.md` + version manifest at plan time and auto-appends
+  a version bump + CHANGELOG step (blocked by all preceding FEAT steps, skill: `hyperwork-tech-writing`).
+  Prevents version bump omissions at the source — the spec — rather than relying on GATE enforcement.
 
 ## [3.1.0] - 2026-05-08
 
