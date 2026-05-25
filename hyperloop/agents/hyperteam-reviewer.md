@@ -145,7 +145,6 @@ Lead broadcasts when all FEAT tasks are `validated` and all DOC tasks are `compl
 
 1. `TaskList` → find GATE task (type: GATE, status: pending).
 2. `TaskUpdate` to `in_progress`.
-3. Update `team-state.json`: `status: in_progress`, `started_at` for GATE task.
 
 ### Gate Step 2 — Run the five-check sequence
 
