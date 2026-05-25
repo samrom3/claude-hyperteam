@@ -63,6 +63,8 @@ ______________________________________________________________________
 
 Read `CLAUDE.md` for ADR locations. Scan ADR dirs and relevant source dirs for existing code related to requested feature. Identify contradictions between requested and existing. **Mandatory in both modes.**
 
+**Versioning detection (same pass):** Check for `CHANGELOG.md` + version manifest (`plugin.json`, `package.json`, `pyproject.toml`, `Cargo.toml`, etc.) in the repo. If both present → read `CLAUDE.md` for bump-type rules (major/minor/patch criteria) and determine `<bump_type>` from those rules + nature of changes being spec'd.
+
 ### Step 3 — Single Focused Interview
 
 Max 2–3 `AskUserQuestion` calls total. Rules:
@@ -138,6 +140,21 @@ Max 2–3 `AskUserQuestion` calls total. Rules:
 
    > **Reading note for agents:** Metadata table (if present) appears **immediately after H1** and **before first `##` section**. Parsers: locate H1, scan forward collecting all `| Source Issue |` rows before `##`; none found → `source_issues` is `null`.
 
+5. **Version bump step (conditional).** `CHANGELOG.md` + version manifest found in Step 2 → append final step after all FEAT/DOC steps:
+
+   ```markdown
+   ### STEP-<slug>-NN: Bump version and update CHANGELOG
+
+   > skills: hyperwork-tech-writing
+
+   **Acceptance Criteria:**
+   - [ ] Version manifest (`plugin.json` / `package.json` / etc.) bumped to next <bump_type> version per CLAUDE.md rules
+   - [ ] `CHANGELOG.md` entry added under correct version header covering all changes in this spec
+   - [ ] Project verification command exits 0
+   ```
+
+   `<bump_type>` from Step 2 detection. Step always last — blocked by all preceding FEAT steps.
+
 ### Step 6 — Final Conflict Sweep
 
 Verify: no step contradicts another; no step conflicts with codebase findings from Step 2. Conflict found → raise with user via `AskUserQuestion` and resolve before saving.
@@ -165,3 +182,4 @@ ______________________________________________________________________
 - [ ] Old `plans/<branch>-session-spec.md` archived to `plans/archive/` if existed
 - [ ] Final conflict sweep complete — no intra-spec contradictions, no codebase conflicts
 - [ ] All `## Open Questions` items answered, deferred with rationale, or removed
+- [ ] `CHANGELOG.md` + version manifest present → final step is version bump + CHANGELOG; `<bump_type>` matches CLAUDE.md rules; step blocked by all preceding FEAT steps

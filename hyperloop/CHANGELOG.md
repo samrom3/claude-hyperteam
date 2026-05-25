@@ -5,6 +5,27 @@ All notable changes to the hyperloop plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-05-25
+
+### Changed
+
+- `team-state.json` no longer holds `in_progress` status or `native_task_id` field. Live
+  execution state (`pending` → `in_progress`) is owned exclusively by the native task list
+  (via `TaskUpdate`); JSON is updated only on terminal transitions (`completed`, `failed`,
+  `blocked`, `validated`). Eliminates the JSON/native-task sync hazard on mid-task crashes.
+- Resume flow (Phase 1) now stashes uncommitted/unstaged changes before reconciling state.
+  Orphaned native tasks from the prior session are cancelled via `TaskStop` before re-seeding,
+  preventing duplicate task claims.
+- `split ownership` table added to `team-state-schema.md` documenting which system owns each
+  state category and why.
+
+### Added
+
+- ADR-004: documents the revert-uncommitted-on-resume decision and its rationale.
+- `session-spec` skill detects `CHANGELOG.md` + version manifest at plan time and auto-appends
+  a version bump + CHANGELOG step (blocked by all preceding FEAT steps, skill: `hyperwork-tech-writing`).
+  Prevents version bump omissions at the source — the spec — rather than relying on GATE enforcement.
+
 ## [3.1.0] - 2026-05-08
 
 ### Fixed
