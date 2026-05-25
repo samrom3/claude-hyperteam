@@ -79,9 +79,9 @@ Fix any failures reported. Re-run until it passes cleanly in a single pass.
    `TaskUpdate` native task back to `pending`, set `status: failed` in `team-state.json` with
    `reason` note, `SendMessage` lead with error, **stop**. Do NOT proceed to the next task.
 2. `TaskUpdate` the native task to `completed`.
-3. Update `team-state.json`:
+3. Update `team-state.json` (first and only JSON write for this task):
    - `status: completed`
-   - `started_at`: UTC timestamp when you began (set here — no earlier JSON write)
+   - `started_at`: UTC timestamp when you began
    - `completed_at`: current UTC timestamp (ISO 8601)
 4. Append to `progress_path`:
    ```

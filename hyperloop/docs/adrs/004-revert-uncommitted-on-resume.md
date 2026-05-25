@@ -1,4 +1,4 @@
-# ADR-0001: Revert Uncommitted Work on Hyperteam Resume
+# ADR-004: Revert Uncommitted Work on Hyperteam Resume
 
 **Status:** Accepted
 
@@ -26,9 +26,11 @@ On resume, discard all uncommitted/unstaged changes before reconciling task stat
 
 ```bash
 git stash --include-untracked
-# or, if a clean wipe is preferred:
-# git checkout -- . && git clean -fd
 ```
+
+`git stash` is preferred over `git checkout -- . && git clean -fd` because stash is recoverable
+— `clean -fd` permanently destroys untracked files. If recovery is needed, `git stash pop` restores
+the discarded work for inspection.
 
 Any task whose work was discarded will have `status: pending` in `team-state.json` (workers write
 `completed` only on successful commit) and will re-enter the queue naturally. Workers claim it
@@ -40,7 +42,8 @@ again and start from scratch.
   `native_task_id` lookups. The queue state is always consistent with the commit graph.
 - **Positive:** Eliminates the JSON/native-task sync hazard entirely for in-flight tasks.
 - **Negative:** A worker that completed most of a task but had not yet committed loses that work
-  and must redo it. This is an acceptable trade-off; partial implementations are small in scope.
+  and must redo it. This is acceptable because the commit is the atomicity boundary — work not
+  committed is not done by definition.
 - **Neutral:** `status: in_progress` is removed from the JSON state machine. Live execution status
   lives only in the native task list (via `TaskUpdate`); JSON holds terminal states only.
 

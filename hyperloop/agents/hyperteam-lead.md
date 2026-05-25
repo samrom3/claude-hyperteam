@@ -131,7 +131,7 @@ The reviewer has already written remediation tasks to `team-state.json`. Your jo
 re-seed the native task list:
 
 1. Re-read `team_state_path`.
-2. Find all tasks with `status: pending` and no corresponding native task (check `TaskList` — tasks absent from the native list need seeding).
+2. Find all tasks with `status: pending` in `team-state.json`. For each, check `TaskList` for a native task whose description contains that task's `id` in its YAML front-matter. Tasks with no matching native task need seeding.
 3. For each such task, call `TaskCreate` with the YAML front-matter + step text as the description.
 4. Broadcast:
 

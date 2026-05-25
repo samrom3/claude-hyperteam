@@ -17,10 +17,9 @@ Before reconciling, revert uncommitted/unstaged changes:
 
 ```bash
 git stash --include-untracked
-# or: git checkout -- . && git clean -fd
 ```
 
-Any discarded work was interrupted mid-task. Its JSON `status` will be `pending` (workers write `completed` only on successful commit) → re-enters queue naturally.
+Stash preferred over `git clean` — stash is recoverable; `clean -fd` is permanent. Any discarded work was interrupted mid-task. Workers write `completed` to JSON only after a successful commit, so interrupted tasks remain `pending` and re-enter the queue naturally. (Edge case: a crash between the JSON write and the git commit leaves `completed` in JSON but no commit — check git log if a `completed` task has no matching commit.)
 
 Reconcile:
 
