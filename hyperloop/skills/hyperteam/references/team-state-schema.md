@@ -2,6 +2,17 @@
 
 `plans/<branch>-team-state.json` is the authoritative task state registry for a hyperteam run. Written at Phase 2 start; mutated by lead, reviewer, and teammates throughout. Native task list (via `TaskCreate`/`TaskUpdate`/`TaskList`) is the live coordination bus; `team-state.json` is the durable mirror for re-entrancy and blocker resolution.
 
+## Split ownership
+
+| State | Owner | Rationale |
+| ----- | ----- | --------- |
+| Live execution status (`pending` → `in_progress`) | Native task list only | Atomic `TaskUpdate`; no file write race |
+| Terminal status (`completed` / `failed` / `blocked`) | JSON, appended on transition | Durable; needed for reviewer discovery and re-entrancy |
+| Terminal review status (`validated`) | JSON, written by reviewer | Durable; reviewer is authoritative |
+| DAG (`blocked_by`, `id`, `title`, `type`, `skills`) | JSON, write-once at Phase 2 start | Structured data native tasks cannot store |
+| Review results (`reviewed`, `review_result`, `review_notes`, `reviewed_at`) | JSON, append-only by reviewer | No native task fields for structured review data |
+| `gate_iterations` | JSON, incremented by lead | Single counter; not duplicated |
+
 ---
 
 ## Top-level structure
@@ -53,9 +64,8 @@ Array of task objects. Each represents one unit of work from session-spec DAG or
 | `description`    | string                  |         | Full task description including acceptance criteria.                                                                                                                                                                                     |
 | `type`           | string                  |         | One of: `"FEAT"`, `"DOC"`, `"GATE"`.                                                                                                                                                                                                   |
 | `skills`         | array of string         | `[]`    | Skills loaded by worker at claim time (names from `hyperloop/skills/hyperwork-*/`). `[]` for no-skill steps (config, env setup, gate).                                                                                                                 |
-| `status`         | string                  |         | One of: `"pending"`, `"in_progress"`, `"completed"`, `"validated"`, `"failed"`, `"blocked"`.                                                                                                                                           |
+| `status`         | string                  |         | One of: `"pending"`, `"completed"`, `"validated"`, `"failed"`, `"blocked"`. JSON never holds `"in_progress"` — workers skip that write; `in_progress` lives only in the native task list. |
 | `blocked_by`     | array of string         |         | IDs of tasks that must reach `"validated"` (FEAT) or `"completed"` (DOC) before this task unblocks.                                                                                                                                     |
-| `native_task_id` | string \| null          | `null`  | UUID from `TaskCreate` for corresponding native task. Cleared to `null` on resume (re-seeded on start).                                                                                                                                  |
 | `started_at`     | string \| null          | `null`  | ISO 8601 timestamp when agent picked up task, or `null`.                                                                                                                                                                                |
 | `completed_at`   | string \| null          | `null`  | ISO 8601 timestamp when task reached `"completed"`, or `null`.                                                                                                                                                                          |
 | `reviewed`       | boolean                 | `false` | Whether reviewer claimed this task for review. Set to `true` as mutex before review begins. FEAT tasks only.                                                                                                                             |
@@ -66,13 +76,14 @@ Array of task objects. Each represents one unit of work from session-spec DAG or
 ### Status transitions
 
 ```
-pending → in_progress → completed → validated
-                      ↘ failed
-                                  ↘ blocked  (after third reviewer FAIL)
+pending → completed → validated
+        ↘ failed
+                    ↘ blocked  (after third reviewer FAIL)
 ```
 
+Note: `in_progress` exists only in the native task list (via `TaskUpdate`). JSON transitions directly from `pending` to `completed`.
+
 - `pending`: not yet started; blockers may or may not be complete.
-- `in_progress`: agent has claimed task.
 - `completed`: agent finished and committed work.
 - `validated`: reviewer confirmed work meets acceptance criteria (FEAT tasks only).
 - `failed`: worker cannot complete after retries. Lead attempts one re-dispatch before escalating to `blocked`.
@@ -91,7 +102,6 @@ Pending task (not yet started):
   "skills": ["hyperwork-tdd", "hyperwork-python"],
   "status": "pending",
   "blocked_by": ["FEAT-user-auth-01"],
-  "native_task_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "started_at": null,
   "completed_at": null,
   "reviewed": false,
@@ -112,7 +122,6 @@ Completed task (reviewer PASS):
   "skills": ["hyperwork-api-scaffold"],
   "status": "validated",
   "blocked_by": [],
-  "native_task_id": null,
   "started_at": "2026-03-14T10:05:00Z",
   "completed_at": "2026-03-14T10:45:00Z",
   "reviewed": true,
@@ -133,7 +142,6 @@ Failed task (reviewer FAIL):
   "skills": ["hyperwork-tdd", "hyperwork-python"],
   "status": "completed",
   "blocked_by": ["FEAT-user-auth-02"],
-  "native_task_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
   "started_at": "2026-03-14T11:10:00Z",
   "completed_at": "2026-03-14T11:50:00Z",
   "reviewed": true,
@@ -154,7 +162,6 @@ DOC task (no review step):
   "skills": ["hyperwork-tech-writing"],
   "status": "completed",
   "blocked_by": ["FEAT-user-auth-01"],
-  "native_task_id": null,
   "started_at": "2026-03-14T10:50:00Z",
   "completed_at": "2026-03-14T11:30:00Z",
   "reviewed": false,
@@ -193,7 +200,6 @@ Integer. Starts at `0` when file first written. Incremented by 1 each time gate 
       "skills": ["hyperwork-api-scaffold"],
       "status": "validated",
       "blocked_by": [],
-      "native_task_id": null,
       "started_at": "2026-03-14T10:05:00Z",
       "completed_at": "2026-03-14T10:45:00Z",
       "reviewed": true,
@@ -209,7 +215,6 @@ Integer. Starts at `0` when file first written. Incremented by 1 each time gate 
       "skills": [],
       "status": "pending",
       "blocked_by": ["FEAT-user-auth-01"],
-      "native_task_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
       "started_at": null,
       "completed_at": null,
       "reviewed": false,
