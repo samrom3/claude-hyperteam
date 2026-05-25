@@ -34,7 +34,7 @@ Reconcile:
 
 Summary listing:
 - Done: IDs and titles of all `completed` / `validated` tasks.
-- Remaining: IDs and titles of all `pending` tasks (after reset in Step 2).
+- Remaining: IDs and titles of all `pending` tasks.
 - Current `gate_iterations` count.
 
 ---
