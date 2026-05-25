@@ -36,7 +36,6 @@ You will be given (via the kickoff broadcast or `SendMessage` from the lead):
 
 1. `TaskUpdate` the chosen task to `in_progress`. File locking prevents double-claim.
 2. Read the full task description (the YAML front-matter + step text beneath it).
-3. Update `team-state.json`: set `status: in_progress` and `started_at` for this task.
 
 ### Step 3 — Load skills
 
@@ -80,9 +79,9 @@ Fix any failures reported. Re-run until it passes cleanly in a single pass.
    `TaskUpdate` native task back to `pending`, set `status: failed` in `team-state.json` with
    `reason` note, `SendMessage` lead with error, **stop**. Do NOT proceed to the next task.
 2. `TaskUpdate` the native task to `completed`.
-3. Update `team-state.json`:
+3. Update `team-state.json` (first and only JSON write for this task):
    - `status: completed`
-   - `started_at`: UTC timestamp when you began (if not already set)
+   - `started_at`: UTC timestamp when you began
    - `completed_at`: current UTC timestamp (ISO 8601)
 4. Append to `progress_path`:
    ```
@@ -110,7 +109,7 @@ If there are simply no more worker tasks: stop. Your work is done.
 - Follow the approach defined by loaded skill(s) — do not default to TDD for non-code steps.
 - The verification command must be green before committing.
 - Commit message must match `[Step-ID] - [Step Title]` format exactly.
-- **Always update BOTH the native task (via `TaskUpdate`) AND `team-state.json` on completion.**
+- Update native task via `TaskUpdate` at claim (`in_progress`) and completion (`completed`). Write to `team-state.json` only at terminal transitions (`completed`, `failed`).
 - Do NOT modify `team-state.json` for any task other than your own.
 - If review notes are present, address all of them before committing.
 - **Never contact the user directly.** If blocked or uncertain, `SendMessage` the lead first.

@@ -137,8 +137,6 @@ For every task in `team-state.json` with `status: pending`:
 
    <full step text and acceptance criteria from team-state.json task description>
    ```
-2. Store returned task UUID as `native_task_id` in corresponding task in `team-state.json`.
-3. After all pending tasks processed, write updated `team-state.json` to disk.
 
 ### Step 4 — Broadcast kickoff
 

@@ -13,9 +13,18 @@ Taken when `plans/<branch>-team-state.json` already exists.
 
 ## Step 2 — Reconcile state
 
+Before reconciling, revert uncommitted/unstaged changes:
+
+```bash
+git stash --include-untracked
+```
+
+Stash preferred over `git clean` — stash is recoverable; `clean -fd` is permanent. Any discarded work was interrupted mid-task. Workers write `completed` to JSON only after a successful commit, so interrupted tasks remain `pending` and re-enter the queue naturally. (Edge case: a crash between the JSON write and the git commit leaves `completed` in JSON but no commit — check git log if a `completed` task has no matching commit.)
+
+Reconcile:
+
 - Tasks with `status: completed` or `status: validated` → done, leave them.
-- Tasks with `status: in_progress` → interrupted, reset to `pending`.
-- Clear `native_task_id` to `null` on **every** task (pending and reset) — re-seeded in Step 5.
+- All other tasks remain `pending` — no resets needed.
 - `team-state.json` wins over `progress.txt` on disagreement.
 
 ---
@@ -24,7 +33,7 @@ Taken when `plans/<branch>-team-state.json` already exists.
 
 Summary listing:
 - Done: IDs and titles of all `completed` / `validated` tasks.
-- Remaining: IDs and titles of all `pending` tasks (after reset in Step 2).
+- Remaining: IDs and titles of all `pending` tasks.
 - Current `gate_iterations` count.
 
 ---
@@ -45,7 +54,9 @@ Use `AskUserQuestion`:
 ## Step 5 — Proceed or stop
 
 - **User confirms:**
-  1. Write updated `team-state.json` (`in_progress` tasks reset to `pending`, all `native_task_id` cleared to `null`).
+  1. Cancel orphaned native tasks from prior session: call `TaskList`, then `TaskStop` any task
+     whose YAML front-matter `id` matches a `status: pending` task in `team-state.json`. Prevents
+     duplicate tasks when re-seeding.
   2. Re-seed native task list: per `status: pending` task, call `TaskCreate` with YAML front-matter and full step text as `description`:
 
      ```
@@ -61,8 +72,6 @@ Use `AskUserQuestion`:
      <full step text and acceptance criteria>
      ```
 
-  3. Store each returned UUID as `native_task_id` in corresponding task object in `team-state.json`.
-  4. Write updated `team-state.json` to disk.
-  5. Return to SKILL.md, proceed to Phase 2.
+  3. Return to SKILL.md, proceed to Phase 2.
 
 - **User declines** — stop. Leave state files unchanged.
